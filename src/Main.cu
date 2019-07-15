@@ -40,11 +40,7 @@ int
 main(int argc, char **argv)
 {
 	char* test = "hello";//this is a string now
-	printf("%f\n", CauchyRand(0.3));
-	printf("%f\n", CauchyRand(0.4));
-	printf("%f\n", CauchyRand(0.5));
-	printf("%f\n", CauchyRand(0.6));
-	printf("%f\n", CauchyRand(0.7));
+
 	//printf(test);
 	//printf("\n");
     //printf("Hello World!\n");

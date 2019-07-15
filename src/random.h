@@ -1,3 +1,6 @@
+#ifndef RANDOM_H_
+#define RANDOM_H_
+
 // includes, system
 #include <stdlib.h>
 #include <stdio.h>
@@ -5,14 +8,7 @@
 #include <math.h>
 #include <time.h>
 
-// includes CUDA
-#include <cuda_runtime.h>
-
-// includes, project
-#include <helper_cuda.h>
-#include <helper_functions.h> // helper functions for SDK examples
-
-#define Pi 3.14159265
+#define Pi 3.14159265358979323846
 
 double CauchyRand(double range){
 	double u = 0.5;
@@ -28,3 +24,4 @@ double CauchyRand(double range){
 	}
 	return u;
 }
+#endif
