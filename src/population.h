@@ -65,6 +65,24 @@ Neuron selectNeuron(Population p){
 	return p.Individuals[idx];
 }
 
+void sortNeurons(Population p){
+	sort(p.Individuals);
+}
+
+void mate(Population p){
+	srand(time(0))
+	int mate;
+	for(i=0;i<p.NumToBreed;i++){
+		if(i==0){
+			mate = rand() % p.NumToBreed;
+		}else{
+			mate = rand() % i;
+		}
+		int childIndex1 = p.NumIndividuals - (1 + (i *2));
+		int childIndex2 = p.NumIndividuals - (2 + (i *2));
+		//one point crossover
+	}
+}
 
 
 #endif
