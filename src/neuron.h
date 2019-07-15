@@ -24,7 +24,6 @@ struct Neuron{
 };
 
 int counter = 0;
-//srand
 
 Neuron newNeuron(int size){
 	counter++;
