@@ -17,19 +17,19 @@ RM := rm
 # Add inputs and outputs from these tool invocations to the build variables 
 
 # All Target
-all: LearningCuda
+all: Cooperative\ co-evolution\ GPU
 
 # Tool invocations
-LearningCuda: $(OBJS) $(USER_OBJS)
+Cooperative\ co-evolution\ GPU: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: NVCC linker'
-	/usr/local/cuda/bin/nvcc --cudart=static -ccbin g++ -gencode arch=compute_30,code=sm_30 -gencode arch=compute_30,code=compute_30 -o "LearningCuda" $(OBJS) $(USER_OBJS) $(LIBS)
+	/usr/local/cuda/bin/nvcc --cudart=static -ccbin g++ -gencode arch=compute_30,code=sm_30 -gencode arch=compute_30,code=compute_30 -o "Cooperative co-evolution GPU" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
 # Other Targets
 clean:
-	-$(RM) $(EXECUTABLES)$(OBJS) LearningCuda
+	-$(RM) $(EXECUTABLES)$(OBJS) "Cooperative co-evolution GPU"
 	-@echo ' '
 
 .PHONY: all clean dependents

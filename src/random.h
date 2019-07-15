@@ -1,15 +1,30 @@
-/*
- * random.h
- *
- *  Created on: 15 Jul 2019
- *      Author: senpai
- */
+// includes, system
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <math.h>
+#include <time.h>
 
-#ifndef RANDOM_H_
-#define RANDOM_H_
+// includes CUDA
+#include <cuda_runtime.h>
 
+// includes, project
+#include <helper_cuda.h>
+#include <helper_functions.h> // helper functions for SDK examples
 
+#define Pi 3.14159265
 
+double CauchyRand(double range){
+	double u = 0.5;
+	double cut = 10.0;
+	srand(time(0));
+	while(u == 0.5){
+		u = rand();
+	}
 
-
-#endif /* RANDOM_H_ */
+	u = range * tan(u*Pi);
+	if(abs(u) > cut){
+		return CauchyRand(range);
+	}
+	return u;
+}
