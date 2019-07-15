@@ -8,6 +8,9 @@
 #include <math.h>
 #include <time.h>
 
+//include other files
+#include "random.h"
+
 struct Neuron{
 	bool Lesioned;
 	int Trials;
@@ -45,11 +48,22 @@ void setFitness(Neuron n, int fitness){
 	n.Fitness = n.Fitness + fitness;
 }
 
-void perturb(Neuron n, Neuron best){
-
+void perturb(Neuron n, Neuron best, int size){
+	if(!n.Tag){
+		coef = 0.3;
+		for(i=0;i<size;i++){
+			n.Weight[i] = best.Weight[i] + CauchyRand(coef);
+		}
+	}
+	//reset
+	n.Fitness = 0;
+	n.Trials = 0;
 }
 
-
+void reset(Neuron n){
+	n.Fitness = 0;
+	n.Trials = 0;
+}
 
 
 
