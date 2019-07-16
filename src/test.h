@@ -37,8 +37,11 @@ void testPop(){
 //	printf("am here\n");
 	Population deref = *p;
 //	Neuron nr = deref.Individuals[0];
+
 	createIndividuals(deref);
 	Neuron t = selectNeuron(deref);
+	mate(deref);
+
 //	Neuron* testn = newNeuron(deref.GeneSize);
 //	printf("%f\n", testn->Weight[0]);
 //	createWeights(*testn, deref.GeneSize);

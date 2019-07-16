@@ -36,16 +36,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Program main
 ////////////////////////////////////////////////////////////////////////////////
-int
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
-	char* test = "hello";//this is a string now
-	testSigmoid();
+//	char* test = "hello";//this is a string now
+//	testSigmoid();
 	testPop();
 	//printf(test);
 	//printf("\n");
     //printf("Hello World!\n");
     //CUDAHello<<<1,10>>>();
     cudaDeviceReset();
+    //
 }
 

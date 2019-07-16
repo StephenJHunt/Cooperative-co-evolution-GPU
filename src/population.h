@@ -115,8 +115,8 @@ void mate(Population p){
 		}else{
 			mate = rand() % i;
 		}
-		int childIndex1 = p.NumIndividuals - (1 + (i *2));
-		int childIndex2 = p.NumIndividuals - (2 + (i *2));
+		int childIndex1 = p.numIndividuals - (1 + (i *2));
+		int childIndex2 = p.numIndividuals - (2 + (i *2));
 		onePointCrossover(p.Individuals[i], p.Individuals[mate], p.Individuals[childIndex1], p.Individuals[childIndex2]);
 	}
 }
