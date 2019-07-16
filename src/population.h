@@ -107,5 +107,16 @@ void mate(Population p){
 	}
 }
 
+void Mutate(Population p, double m){
+	srand(time(0));
+	for(i=p.NumToBreed;i<p.numIndividuals;i++){
+		if(((double)rand()) < m){
+			int mutationIndex = rand() % p.GeneSize;
+			p.Individuals[i].Weight[mutationIndex] = p.Individuals[i].Weight[mutationIndex] + CauchyRand(0.3);
+		}
+	}
+}
+
+
 
 #endif
