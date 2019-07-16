@@ -12,35 +12,36 @@
 #include "random.h"
 
 struct Neuron{
-	bool Lesioned;
-	int Trials;
-	int Fitness;
-	bool Tag;
 	int Parent1;
 	int Parent2;
 	int ID;
 	char* Name;
-	double Weight[];
+	double* Weight;
 	int size;
+	bool Lesioned;
+	int Trials;
+	int Fitness;
+	bool Tag;
 };
 
 int counter = 0;
 
-Neuron newNeuron(int size){
+Neuron* newNeuron(int size){
 	counter++;
-	Neuron n = new Neuron{};
-	n.ID = counter;
+	double w[size];
+	Neuron* n = new Neuron{-1, -1, counter, "Neuron", w, size};
+	/*n.ID = counter;
 	n.Weight = new double[size];
 	n.Name = "Neuron";
 	n.Parent1 = -1;
 	n.Parent2 = -1;
-	n.size = size;
+	n.size = size;*/
 	return n;
 }
 
 void createWeights(Neuron n, int size){
 	srand(time(0));
-	for(i=0;i<size;i++){
+	for(int i=0;i<size;i++){
 		n.Weight[i] = (rand() * 12.0) - 6.0;
 	}
 }
@@ -51,8 +52,8 @@ void setFitness(Neuron n, int fitness){
 
 void perturb(Neuron n, Neuron best, int size){
 	if(!n.Tag){
-		coef = 0.3;
-		for(i=0;i<size;i++){
+		double coef = 0.3;
+		for(int i=0;i<size;i++){
 			n.Weight[i] = best.Weight[i] + CauchyRand(coef);
 		}
 	}
