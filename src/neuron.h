@@ -21,6 +21,7 @@ struct Neuron{
 	int ID;
 	char* Name;
 	double Weight[];
+	int size;
 };
 
 int counter = 0;
@@ -33,6 +34,7 @@ Neuron newNeuron(int size){
 	n.Name = "Neuron";
 	n.Parent1 = -1;
 	n.Parent2 = -1;
+	n.size = size;
 	return n;
 }
 
