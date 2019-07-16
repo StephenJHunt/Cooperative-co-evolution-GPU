@@ -28,7 +28,7 @@ int counter = 0;
 
 Neuron* newNeuron(int size){
 	counter++;
-	double w[size];
+	double* w = new double[size];
 	Neuron* n = new Neuron{-1, -1, counter, "Neuron", w, size};
 	/*n.ID = counter;
 	n.Weight = new double[size];
