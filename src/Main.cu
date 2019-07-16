@@ -46,6 +46,6 @@ int main(int argc, char **argv)
     //printf("Hello World!\n");
     //CUDAHello<<<1,10>>>();
     cudaDeviceReset();
-    //
+    ///
 }
 

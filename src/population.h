@@ -120,8 +120,8 @@ void mate(Population p){
 		onePointCrossover(p.Individuals[i], p.Individuals[mate], p.Individuals[childIndex1], p.Individuals[childIndex2]);
 	}
 }
-/*
-void Mutate(Population p, double m){
+
+void mutate(Population p, double m){
 	srand(time(0));
 	for(int i=p.NumToBreed;i<p.numIndividuals;i++){
 		if(((double)rand()) < m){
@@ -132,11 +132,11 @@ void Mutate(Population p, double m){
 }
 
 void growIndividuals(Population p){
-	for(i=0;i<p.numIndividuals;i++){
+	for(int i=0;i<p.numIndividuals;i++){
 		double temp = 1.0;
 		//need to somehow add this temp value to the end of the weight array
 	}
 }
-*/
+
 
 #endif
