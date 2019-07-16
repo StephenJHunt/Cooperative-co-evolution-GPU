@@ -117,6 +117,12 @@ void Mutate(Population p, double m){
 	}
 }
 
+void growIndividuals(Population p){
+	for(i=0;i<p.numIndividuals;i++){
+		double temp = 1.0;
+		//need to somehow add this temp value to the end of the weight array
+	}
+}
 
 
 #endif
