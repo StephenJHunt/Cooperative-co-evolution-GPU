@@ -7,27 +7,52 @@
 #include <string.h>
 #include <math.h>
 #include <time.h>
+#include <algorithm>
 
 //include other files
 #include "random.h"
 #include "neuron.h"
 
-struct Neurons{
-	Neuron* Neurons;
-};
+//struct Neurons{
+//	Neuron Neuron[10];
+//};
+//
+//Neurons newNeurons(int size){
+//	Neurons n;
+//	n.Neuron = new Neuron[size];
+//	return n;
+//}
 
 struct Population{
 	int ID;
-	Neurons* Individuals;
+	Neuron* Individuals;
 	int numIndividuals;
 	bool Evolvable;
 	int NumToBreed;
 	int GeneSize;
 };
 
-bool isLess(Neurons n, int i, int j){
-	Neuron n1 = n.Neurons[i];
-	Neuron n2 = n.Neurons[j];
+int popCounter = 0;
+
+Population* newPopulation(int size, int genesize){
+	popCounter++;
+	Neuron* narr = new Neuron[size];
+//	Neurons indivs = newNeurons(size);
+//	indivs.Neuron = narr;
+	Population* p = new Population{popCounter, narr, size, true, size/4, genesize};
+	/*p.ID = counter;
+	p.numIndividuals = size;
+	p.Individuals = new Neurons[size];
+	p.Evolvable = true;
+	p.GeneSize = genesize;
+	p.NumToBreed = size/4;*/
+	return p;
+}
+/*
+bool isLess(Neuron* n, int i, int j){
+	Neuron arr[] = *n;
+	Neuron n1 = arr[i];
+	Neuron n2 = arr[j];
 	int div1 = n1.Trials;
 	int div2 = n2.Trials;
 	if(div1 == 0){
@@ -37,30 +62,14 @@ bool isLess(Neurons n, int i, int j){
 		div2 = 1;
 	}
 	return (n1.Fitness / div1) > (n2.Fitness / div2);
-}
-
-int popCounter = 0;
-
-Population* newPopulation(int size, int genesize){
-	popCounter++;
-	Neuron* ns = new Neuron[size];
-	Neurons* indivs = new Neurons{ns};
-	Population* p = new Population{counter, indivs, size, true, size/4, genesize};
-	/*p.ID = counter;
-	p.numIndividuals = size;
-	p.Individuals = new Neurons[size];
-	p.Evolvable = true;
-	p.GeneSize = genesize;
-	p.NumToBreed = size/4;*/
-	return p;
-}
+}*/
 
 void createIndividuals(Population p){
 	if(p.Evolvable){
 		for(int i=0;i<p.numIndividuals;i++){
 			Neuron* n = newNeuron(p.GeneSize);
-			p.Individuals[i] = n;
-			p.Individuals[i].createWeights(p.Individuals[i]. p.GeneSize);
+			createWeights(*n, p.GeneSize);
+			p.Individuals[i] = *n;
 		}
 	}
 }
@@ -72,7 +81,7 @@ Neuron selectNeuron(Population p){
 }
 
 void sortNeurons(Population p){
-	sort(p.Individuals);
+//	sort(p.Individuals, p.Individuals + p.numIndividuals);//import isn't working or something
 }
 
 void onePointCrossover(Neuron parent1, Neuron parent2, Neuron child1, Neuron child2){
@@ -111,7 +120,7 @@ void mate(Population p){
 		onePointCrossover(p.Individuals[i], p.Individuals[mate], p.Individuals[childIndex1], p.Individuals[childIndex2]);
 	}
 }
-
+/*
 void Mutate(Population p, double m){
 	srand(time(0));
 	for(int i=p.NumToBreed;i<p.numIndividuals;i++){
@@ -128,6 +137,6 @@ void growIndividuals(Population p){
 		//need to somehow add this temp value to the end of the weight array
 	}
 }
-
+*/
 
 #endif
