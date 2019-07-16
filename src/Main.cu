@@ -40,7 +40,7 @@ int
 main(int argc, char **argv)
 {
 	char* test = "hello";//this is a string now
-
+	testSigmoid();
 	//printf(test);
 	//printf("\n");
     //printf("Hello World!\n");

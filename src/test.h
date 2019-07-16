@@ -14,6 +14,9 @@
 //include files to test
 #include "euler.h"
 #include "random.h"
+#include "neuron.h"
+#include "population.h"
+#include "sigmoid.h"
 /*
 __global__ void CUDAHello (){
 	printf("CUDA Hello\n");
@@ -24,4 +27,7 @@ void testRandom(){
 	printf("%f\n", CauchyRand(0.5));
 	printf("%f\n", CauchyRand(0.6));
 	printf("%f\n", CauchyRand(0.7));
+}
+void testSigmoid(){
+	printf("%f\n", Logistic(1.0, 2.0));
 }
