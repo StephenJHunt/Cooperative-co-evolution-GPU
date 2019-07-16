@@ -48,6 +48,7 @@ Population newPopulation(int size, int genesize){
 	p.Evolvable = true;
 	p.GeneSize = genesize;
 	p.NumToBreed = size/4;
+	return p;
 }
 
 void createIndividuals(Population p){
@@ -69,8 +70,30 @@ void sortNeurons(Population p){
 	sort(p.Individuals);
 }
 
+void onePointCrossover(Neuron parent1, Neuron parent2, Neuron child1, Neuron child2){
+	srand(time(0));
+	int crosspoint = rand() % parent1.size;
+	for(int i = 0;i < parent1.size;i++){
+		child1.Weight[i] = parent2.Weight[i];
+		child2.Weight[i] = parent2.Weight[i];
+	}
+	child1.Parent1 = parent1.ID;
+	child1.Parent2 = parent2.ID;
+	child2.Parent1 = parent1.ID;
+	child2.Parent2 = parent2.ID;
+
+	reset(child1);
+	reset(child2);
+
+	for(j=0;j<crosspoint;j++){
+		double temp = child1.Weight[j];
+		child1.Weight[j] = child2.Weight[j];
+		child2.Weight[j] = temp;
+	}
+}
+
 void mate(Population p){
-	srand(time(0))
+	srand(time(0));
 	int mate;
 	for(i=0;i<p.NumToBreed;i++){
 		if(i==0){
@@ -80,7 +103,7 @@ void mate(Population p){
 		}
 		int childIndex1 = p.NumIndividuals - (1 + (i *2));
 		int childIndex2 = p.NumIndividuals - (2 + (i *2));
-		//one point crossover
+		onePointCrossover(p.Individuals[i], p.Individuals[mate], p.Individuals[childIndex1], p.Individuals[childIndex2]);
 	}
 }
 
