@@ -13,7 +13,7 @@
 #include "neuron.h"
 
 struct Neurons{
-	Neuron* Neurons[];
+	Neuron* Neurons;
 };
 
 struct Population{
@@ -26,8 +26,8 @@ struct Population{
 };
 
 bool isLess(Neurons n, int i, int j){
-	Neuron n1 = *n.Neurons[i];
-	Neuron n2 = *n.Neurons[j];
+	Neuron n1 = n.Neurons[i];
+	Neuron n2 = n.Neurons[j];
 	int div1 = n1.Trials;
 	int div2 = n2.Trials;
 	if(div1 == 0){
@@ -36,14 +36,15 @@ bool isLess(Neurons n, int i, int j){
 	if(div2 == 0){
 		div2 = 1;
 	}
-	return (n.Neurons[i].Fitness / div1) > (n.Neurons[j].Fitness / div2);
+	return (n1.Fitness / div1) > (n2.Fitness / div2);
 }
 
 int popCounter = 0;
 
 Population* newPopulation(int size, int genesize){
 	popCounter++;
-	Neurons* indivs = new Neurons[size];
+	Neuron* ns = new Neuron[size];
+	Neurons* indivs = new Neurons{ns};
 	Population* p = new Population{counter, indivs, size, true, size/4, genesize};
 	/*p.ID = counter;
 	p.numIndividuals = size;
@@ -57,8 +58,8 @@ Population* newPopulation(int size, int genesize){
 void createIndividuals(Population p){
 	if(p.Evolvable){
 		for(int i=0;i<p.numIndividuals;i++){
-			Neuron
-			p.Individuals[i] = newNeuron(p.GeneSize);
+			Neuron* n = newNeuron(p.GeneSize);
+			p.Individuals[i] = n;
 			p.Individuals[i].createWeights(p.Individuals[i]. p.GeneSize);
 		}
 	}
@@ -89,7 +90,7 @@ void onePointCrossover(Neuron parent1, Neuron parent2, Neuron child1, Neuron chi
 	reset(child1);
 	reset(child2);
 
-	for(j=0;j<crosspoint;j++){
+	for(int j=0;j<crosspoint;j++){
 		double temp = child1.Weight[j];
 		child1.Weight[j] = child2.Weight[j];
 		child2.Weight[j] = temp;
@@ -99,7 +100,7 @@ void onePointCrossover(Neuron parent1, Neuron parent2, Neuron child1, Neuron chi
 void mate(Population p){
 	srand(time(0));
 	int mate;
-	for(i=0;i<p.NumToBreed;i++){
+	for(int i=0;i<p.NumToBreed;i++){
 		if(i==0){
 			mate = rand() % p.NumToBreed;
 		}else{
@@ -113,7 +114,7 @@ void mate(Population p){
 
 void Mutate(Population p, double m){
 	srand(time(0));
-	for(i=p.NumToBreed;i<p.numIndividuals;i++){
+	for(int i=p.NumToBreed;i<p.numIndividuals;i++){
 		if(((double)rand()) < m){
 			int mutationIndex = rand() % p.GeneSize;
 			p.Individuals[i].Weight[mutationIndex] = p.Individuals[i].Weight[mutationIndex] + CauchyRand(0.3);
