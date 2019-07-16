@@ -42,6 +42,7 @@ void testPop(){
 	Neuron t = selectNeuron(deref);
 	mate(deref);
 	mutate(deref, 0.3);
+//	growIndividuals(deref);
 
 //	Neuron* testn = newNeuron(deref.GeneSize);
 //	printf("%f\n", testn->Weight[0]);
@@ -58,5 +59,5 @@ void testPop(){
 //	Neuron nr3 = deref.Individuals[9];
 //	printf("%d\n%d\n%d\n%d\n%d\n%d\n%d",deref.NumToBreed, nr.Fitness, nr0.Fitness, nr4.Fitness, nr1.Fitness, nr2.Fitness, nr3.Fitness);
 //	printf("%f\n", nr.Weight[0]);
-	printf("test passed\n");
+	printf("Population Tests Passed\n");
 }

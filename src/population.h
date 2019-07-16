@@ -132,9 +132,11 @@ void mutate(Population p, double m){
 }
 
 void growIndividuals(Population p){
+	Neuron* arr = new Neuron[p.numIndividuals+1];
+	double temp = 1.0;
 	for(int i=0;i<p.numIndividuals;i++){
-		double temp = 1.0;
-		//need to somehow add this temp value to the end of the weight array
+//		p.numIndividuals[i].Weight[i] = p.Individuals[i].Weight[i] + temp;
+		//I don't actually know what this function is supposed to do
 	}
 }
 
