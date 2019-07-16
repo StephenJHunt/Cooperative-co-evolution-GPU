@@ -31,3 +31,6 @@ void testRandom(){
 void testSigmoid(){
 	printf("%f\n", Logistic(1.0, 2.0));
 }
+void testPop(){
+	Population* p = newPopulation(10, 10);
+}

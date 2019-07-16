@@ -13,7 +13,7 @@
 #include "neuron.h"
 
 struct Neurons{
-	Neuron Neurons[];
+	Neuron* Neurons[];
 };
 
 struct Population{
@@ -26,8 +26,10 @@ struct Population{
 };
 
 bool isLess(Neurons n, int i, int j){
-	int div1 = n.Neurons[i].Trials;
-	int div2 = n.Neurons[j].Trials;
+	Neuron n1 = *n.Neurons[i];
+	Neuron n2 = *n.Neurons[j];
+	int div1 = n1.Trials;
+	int div2 = n2.Trials;
 	if(div1 == 0){
 		div1 = 1;
 	}
@@ -49,21 +51,22 @@ Population* newPopulation(int size, int genesize){
 	p.Evolvable = true;
 	p.GeneSize = genesize;
 	p.NumToBreed = size/4;*/
-	return *p;
+	return p;
 }
 
 void createIndividuals(Population p){
 	if(p.Evolvable){
 		for(int i=0;i<p.numIndividuals;i++){
+			Neuron
 			p.Individuals[i] = newNeuron(p.GeneSize);
-			p.Individuals[i].createWeights(p.Individuals[i]. p.Genesize);
+			p.Individuals[i].createWeights(p.Individuals[i]. p.GeneSize);
 		}
 	}
 }
 
 Neuron selectNeuron(Population p){
 	srand(time(0));
-	idx = rand() % p.numIndividuals;
+	int idx = rand() % p.numIndividuals;
 	return p.Individuals[idx];
 }
 
