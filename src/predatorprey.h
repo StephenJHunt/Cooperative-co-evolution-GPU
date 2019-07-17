@@ -18,7 +18,9 @@ struct PredatorPrey{
 	Gridworld* world;
 };
 
-
+PredatorPrey* newPredatorPrey(){
+	return new PredatorPrey{"Predator Prey Task", new State, new Gridworld};
+}
 
 
 
