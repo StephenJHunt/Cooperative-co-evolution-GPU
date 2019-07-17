@@ -1,15 +1,26 @@
-/*
- * predatorprey.h
- *
- *  Created on: 15 Jul 2019
- *      Author: senpai
- */
-
 #ifndef PREDATORPREY_H_
 #define PREDATORPREY_H_
 
+// includes, system
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <math.h>
+
+//include other files
+#include "environment.h"
+
+bool caught = false;
+
+struct PredatorPrey{
+	char* name;
+	State* state;
+	Gridworld* world;
+};
 
 
 
 
-#endif /* PREDATORPREY_H_ */
+
+
+#endif
