@@ -68,5 +68,8 @@ double* Activate(feedForward f, double* input, int inputLen, double* output){
 	return output;
 }
 
+Neuron* getHiddenUnits(feedForward f){
+	return f.HiddenUnits;
+}
 
 #endif /* FEEDFORWARD_H_ */
