@@ -19,6 +19,8 @@
 #include "population.h"
 #include "sigmoid.h"
 #include "feedforward.h"
+#include "network.h"
+#include "environment.h"
 /*
 __global__ void CUDAHello (){
 	printf("CUDA Hello\n");
@@ -65,4 +67,30 @@ void testPop(){
 
 void testFF(){
 	feedForward* fdfw = newFeedForward(5, 5, 5, true);
+}
+
+class useNetwork: public Network{
+	public:
+		bool hasBias(){
+			return true;
+		}
+};
+
+void testNetwork(){
+	useNetwork network;
+	printf("Network test ");
+	printf(network.hasBias() ? "true\n":"false\n");
+}
+
+class useEnvironment: public Environment{
+public:
+	bool Caught(){
+		return true;
+	}
+};
+
+void testEnvironment(){
+	useEnvironment environment;
+	printf("Environment test ");
+	printf(environment.Caught() ? "true\n":"false\n");
 }
