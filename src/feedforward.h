@@ -122,5 +122,12 @@ void Tag(feedForward f){
 	}
 }
 
+void resetActivation(feedForward f){
+	f.Activation = new double[f.numHidden];
+}
 
+void resetFitness(feedForward f){
+	f.Fitness = 0;
+	f.Trials = 0;
+}
 #endif
