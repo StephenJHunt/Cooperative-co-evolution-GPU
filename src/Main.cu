@@ -44,11 +44,12 @@ int main(int argc, char **argv)
 	testFF();
 	testNetwork();
 	testEnvironment();
+	testPredatorPrey();
 	//printf(test);
 	//printf("\n");
     //printf("Hello World!\n");
     //CUDAHello<<<1,10>>>();
     cudaDeviceReset();
-    ///
+    //
 }
 

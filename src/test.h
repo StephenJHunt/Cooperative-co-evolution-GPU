@@ -21,6 +21,7 @@
 #include "feedforward.h"
 #include "network.h"
 #include "environment.h"
+#include "predatorprey.h"
 /*
 __global__ void CUDAHello (){
 	printf("CUDA Hello\n");
@@ -93,4 +94,8 @@ void testEnvironment(){
 	useEnvironment environment;
 	printf("Environment test ");
 	printf(environment.Caught() ? "true\n":"false\n");
+}
+
+void testPredatorPrey(){
+	PredatorPrey* pp = newPredatorPrey();
 }
