@@ -18,6 +18,7 @@
 #include "neuron.h"
 #include "population.h"
 #include "sigmoid.h"
+#include "feedforward.h"
 /*
 __global__ void CUDAHello (){
 	printf("CUDA Hello\n");
@@ -60,4 +61,8 @@ void testPop(){
 //	printf("%d\n%d\n%d\n%d\n%d\n%d\n%d",deref.NumToBreed, nr.Fitness, nr0.Fitness, nr4.Fitness, nr1.Fitness, nr2.Fitness, nr3.Fitness);
 //	printf("%f\n", nr.Weight[0]);
 	printf("Population Tests Passed\n");
+}
+
+void testFF(){
+	feedForward* fdfw = newFeedForward(5, 5, 5, true);
 }
