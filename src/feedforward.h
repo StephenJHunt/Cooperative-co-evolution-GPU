@@ -91,13 +91,29 @@ int getTotalOutputs(feedForward f){
 	return f.NumOutputs;
 }
 
+bool hasBias(feedForward f){
+	return f.bias;
+}
 
+void setFitness(feedForward f, int fitness){
+	f.Fitness = fitness;
+}
 
+int getFitness(feedForward f){
+	return f.Fitness;
+}
 
+int getID(feedForward f){
+	return f.ID;
+}
 
-
-
-
+void setNeuronFitness(feedForward f){
+	for(int i = 0; i<f.numHidden;i++){
+		Neuron n = f.HiddenUnits[i];
+		setFitness(n, f.Fitness);
+		n.Trials++;
+	}
+}
 
 
 
