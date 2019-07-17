@@ -79,7 +79,27 @@ void Create(feedForward f, Population* p, int numPops){
 	}
 }
 
+int getTotalInputs(feedForward f){
+	if(f.bias){
+		return f.NumInputs +1;
+	}else{
+		return f.NumInputs;
+	}
+}
+
+int getTotalOutputs(feedForward f){
+	return f.NumOutputs;
+}
 
 
 
-#endif /* FEEDFORWARD_H_ */
+
+
+
+
+
+
+
+
+
+#endif
