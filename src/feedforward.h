@@ -72,4 +72,14 @@ Neuron* getHiddenUnits(feedForward f){
 	return f.HiddenUnits;
 }
 
+
+void Create(feedForward f, Population* p, int numPops){
+	for(int i = 0; i < numPops;i++){
+		f.HiddenUnits[i] = selectNeuron(p[i]);
+	}
+}
+
+
+
+
 #endif /* FEEDFORWARD_H_ */
