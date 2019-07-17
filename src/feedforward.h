@@ -115,7 +115,12 @@ void setNeuronFitness(feedForward f){
 	}
 }
 
-
+void Tag(feedForward f){
+	for(int i = 0; i<f.numHidden;i++){
+		Neuron n = f.HiddenUnits[i];
+		n.Tag = true;
+	}
+}
 
 
 #endif
