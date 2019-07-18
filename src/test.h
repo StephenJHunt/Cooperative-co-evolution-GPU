@@ -100,3 +100,15 @@ void testPredatorPrey(){
 	PredatorPrey* pp = newPredatorPrey();
 	reset(*pp, 1);
 }
+
+void runTests(){
+	testRandom();
+	testSigmoid();
+	testPop();
+	testFF();
+	testNetwork();
+	testEnvironment();
+	testPredatorPrey();
+
+}
+
