@@ -86,9 +86,36 @@ void PerformPredatorAction(PredatorPrey pp, int pos, double* action, int actionl
 }
 
 void PerformPreyAction(PredatorPrey pp, int nearest){
-	double xDistance = (double)pp.state->PredatorX[nearest] - pp.state->PreyX;
-	if(abs(xDistance) > (double)pp.world->length/2){
+	double xDistance = (double)(pp.state->PredatorX[nearest] - pp.state->PreyX);
+	if(abs(xDistance) > (double)(pp.world->length/2)){
+		double temp = xDistance;
+		xDistance = (double)(pp.world->length - abs(xDistance));
+		if(temp > 0){
+			xDistance = 0- xDistance;
+		}
+	}
 
+	double yDistance = (double)(pp.state->PredatorY[nearest] - pp.state->PreyY);
+	if(abs(yDistance) > (double)(pp.world->height/2)){
+		double temp = yDistance;
+		yDistance = (double)(pp.world->height - abs(yDistance));
+		if(temp > 0){
+			yDistance = 0- yDistance;
+		}
+	}
+
+	//NESW movement
+	if(yDistance < 0 && (abs((double)(yDistance)) >= abs((double)xDistance))){
+		pp.state->PreyY++;
+	}
+	else if(xDistance < 0 && (abs((double)xDistance) >= abs((double)yDistance))){
+		pp.state->PreyX++;
+	}
+	else if(yDistance > 0 && (abs((double)(yDistance)) >= abs((double)xDistance))){
+		pp.state->PreyY--;
+	}
+	else if(xDistance > 0 && (abs((double)(xDistance)) >= abs((double)yDistance))){
+		pp.state->PreyX--;
 	}
 }
 
