@@ -117,6 +117,19 @@ void PerformPreyAction(PredatorPrey pp, int nearest){
 	else if(xDistance > 0 && (abs((double)(xDistance)) >= abs((double)yDistance))){
 		pp.state->PreyX--;
 	}
+
+	if(pp.state->PreyX > pp.world->length){
+			pp.state->PreyX = pp.state->PreyX - pp.world->length;
+		}
+		if(pp.state->PreyY > pp.world->height){
+			pp.state->PreyY = pp.state->PreyY - pp.world->height;
+		}
+		if(pp.state->PreyX < 0){
+			pp.state->PreyX = pp.state->PreyX + pp.world->length;
+		}
+		if(pp.state->PreyY < 0){
+			pp.state->PreyY = pp.state->PreyY + pp.world->height;
+		}
 }
 
 
