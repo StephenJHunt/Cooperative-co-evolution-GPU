@@ -98,4 +98,5 @@ void testEnvironment(){
 
 void testPredatorPrey(){
 	PredatorPrey* pp = newPredatorPrey();
+	reset(*pp, 1);
 }
