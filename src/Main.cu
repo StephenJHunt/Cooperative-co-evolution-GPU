@@ -64,6 +64,15 @@ struct tempState{
 	int PreyY;
 };
 
+Population* init(int hid, int num, int genes){
+	Population* pops = new Population[hid];
+	for(int i = 0; i < hid; i++){
+		Population* p = newPopulation(num, genes);
+		createIndividuals(*p);
+		pops[i] = *p;
+	}
+	return pops;
+}
 
 int main(int argc, char **argv)
 {
