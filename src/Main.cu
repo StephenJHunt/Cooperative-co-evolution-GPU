@@ -74,6 +74,21 @@ Population* init(int hid, int num, int genes){
 	return pops;
 }
 
+int calculateDistance(int predX, int predY, int preyX ,int preyY){
+	double xDist = 0;
+	double yDist = 0;
+
+	xDist = abs((double)(predX-preyX));
+}
+
+Network* evaluate(Environment e, Network* team){
+	int fitness =0;
+	int steps = 0;
+	int maxSteps = 150;
+	int avg_init_dist = 0;
+	int avg_final_dist = 0;
+}
+
 int main(int argc, char **argv)
 {
 
