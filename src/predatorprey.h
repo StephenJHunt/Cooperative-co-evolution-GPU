@@ -132,13 +132,17 @@ void PerformPreyAction(PredatorPrey pp, int nearest){
 		}
 }
 
+State* getState(PredatorPrey pp){
+	return pp.state;
+}
 
+Gridworld* getWorld(PredatorPrey pp){
+	return pp.world;
+}
 
-
-
-
-
-
+bool Caught(PredatorPrey pp){
+	return caught;
+}
 
 
 
