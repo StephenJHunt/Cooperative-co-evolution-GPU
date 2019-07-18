@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <time.h>
 
 // includes CUDA
 #include <cuda_runtime.h>
@@ -28,28 +29,53 @@
 #include <helper_cuda.h>
 #include <helper_functions.h> // helper functions for SDK examples
 
-//include other file
+//include other files
 #include "test.h"
 #include "random.h"
-
+#include "environment.h"
+#include "network.h"
+#include "population.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // Program main
 ////////////////////////////////////////////////////////////////////////////////
+
+//globals
+Network* bestTeam;
+Population* subPops;
+Population** predSubPops;
+Gridworld world;
+
+//input params with default values
+bool sim = false;
+int hidden = 10;
+int numIndivs = 100;
+int numInputs = 2;
+int numOutputs = 5;
+int burstGens = 10;
+int maxGens = 100000;
+int goalFitness = 100000;
+int numPreds = 3;
+
+struct tempState{
+	int* PredatorX;
+	int* PredatorY;
+	int PreyX;
+	int PreyY;
+};
+
+
 int main(int argc, char **argv)
 {
+
+
 //	char* test = "hello";//this is a string now
-//	testSigmoid();
-	testPop();
-	testFF();
-	testNetwork();
-	testEnvironment();
-	testPredatorPrey();
+	runTests();
 	//printf(test);
 	//printf("\n");
     //printf("Hello World!\n");
     //CUDAHello<<<1,10>>>();
-    cudaDeviceReset();
+//    cudaDeviceReset();
     //
 }
 
