@@ -79,6 +79,15 @@ int calculateDistance(int predX, int predY, int preyX ,int preyY){
 	double yDist = 0;
 
 	xDist = abs((double)(predX-preyX));
+	if(xDist > double(world.length/2)){
+		xDist = double(world.length) - xDist;
+	}
+
+	yDist = abs((double)(predY-preyY));
+	if(yDist > double(world.height/2)){
+		yDist = double(world.height) - yDist;
+	}
+	return int(xDist + yDist);
 }
 
 Network* evaluate(Environment e, Network* team){
