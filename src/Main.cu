@@ -90,12 +90,39 @@ int calculateDistance(int predX, int predY, int preyX ,int preyY){
 	return int(xDist + yDist);
 }
 
-Network* evaluate(Environment e, Network* team){
+Network* evaluate(PredatorPrey e, feedForward* team){
 	int fitness =0;
 	int steps = 0;
 	int maxSteps = 150;
 	int avg_init_dist = 0;
 	int avg_final_dist = 0;
+
+	int inplen = getTotalInputs(team[0]);
+	int outlen = getTotalOutputs(team[0]);
+	double* input = new double[inplen];
+	double* output = new double[outlen];
+	State state;
+	tempState tmpstate;
+
+	tempState* states;
+
+	State* statepntr = getState(e);
+	Gridworld* worldpntr = getWorld(e);
+	state = *statepntr;
+	world = *worldpntr;
+
+	int nearestDist = 0;
+	int nearestPred = 0;
+	int currentDist = 0;
+
+	for(int p = 0 ; p < numPreds; p++){
+		avg_init_dist = avg_init_dist + calculateDistance(state.PredatorX[p], state.PredatorY[p], state.PreyX, state.PreyY);
+	}
+	avg_init_dist = avg_init_dist/numPreds;
+
+	while(!Caught(e) && steps < maxSteps){
+		//stuff
+	}
 }
 
 int main(int argc, char **argv)
