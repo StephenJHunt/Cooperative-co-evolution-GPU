@@ -37,6 +37,11 @@ void reset(PredatorPrey pp, int n){
 	pp.state->Caught = false;
 }
 
+void setPreyPosition(PredatorPrey pp,int x, int y){
+	pp.state->PreyX = x;
+	pp.state->PreyY = y;
+}
+
 int getMaxPosition(double* action, int actionlen){
  double max = action[0];
  int result = 0;
