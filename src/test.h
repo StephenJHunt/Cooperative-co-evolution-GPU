@@ -4,6 +4,7 @@
 #include <string.h>
 #include <math.h>
 #include <iostream>
+#include <random>
 
 // includes CUDA
 #include <cuda_runtime.h>
@@ -34,7 +35,7 @@ void testRandom(){
 	printf("%f\n", CauchyRand(0.7));
 }
 void testSigmoid(){
-	printf("%f\n", Logistic(1.0, 2.0));
+	printf("\n%f\n", Logistic(1.0, 2.0));
 }
 void testPop(){
 	Population* p = newPopulation(10, 10);
@@ -97,7 +98,7 @@ void testEnvironment(){
 }
 
 void testPredatorPrey(){
-	PredatorPrey* pp = newPredatorPrey();
+	PredatorPrey* pp = newPredatorPrey(5);
 	reset(*pp, 1);
 }
 

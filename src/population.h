@@ -37,15 +37,8 @@ int popCounter = 0;
 Population* newPopulation(int size, int genesize){
 	popCounter++;
 	Neuron* narr = new Neuron[size];
-//	Neurons indivs = newNeurons(size);
-//	indivs.Neuron = narr;
 	Population* p = new Population{popCounter, narr, size, true, size/4, genesize};
-	/*p.ID = counter;
-	p.numIndividuals = size;
-	p.Individuals = new Neurons[size];
-	p.Evolvable = true;
-	p.GeneSize = genesize;
-	p.NumToBreed = size/4;*/
+
 	return p;
 }
 /*
@@ -77,11 +70,12 @@ void createIndividuals(Population p){
 Neuron selectNeuron(Population p){
 	srand(time(0));
 	int idx = rand() % p.numIndividuals;
+//	printf("select neuron rand: %d\n", idx);
 	return p.Individuals[idx];
 }
 
 void sortNeurons(Population p){
-//	sort(p.Individuals, p.Individuals + p.numIndividuals);//import isn't working or something
+	//sort(p.Individuals, p.Individuals + p.numIndividuals);//import isn't working or something
 }
 
 void onePointCrossover(Neuron parent1, Neuron parent2, Neuron child1, Neuron child2){

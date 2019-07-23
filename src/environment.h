@@ -11,6 +11,7 @@ struct State{
 	int* PredatorY;
 	int PreyX;
 	int PreyY;
+	bool Caught;
 };
 
 class Environment{

@@ -29,6 +29,7 @@ struct feedForward {
 	bool bias;
 	int Trials;
 	int Fitness;
+	int Catches;
 	int Parent1;
 	int Parent2;
 	char* name;
@@ -36,6 +37,7 @@ struct feedForward {
 	int numHidden;
 };
 
+int counter = 0;
 feedForward* newFeedForward(int in, int hid, int out, bool bias){
 	counter++;
 	int genesize = in + out;
@@ -44,7 +46,7 @@ feedForward* newFeedForward(int in, int hid, int out, bool bias){
 	}
 	double* actArr = new double[hid];
 	Neuron* neuArr = new Neuron[hid];
-	feedForward* ff = new feedForward{counter, actArr, neuArr, in, out, bias, 0, 0, -1, -1, "Feed Forward", genesize, hid};
+	feedForward* ff = new feedForward{counter, actArr, neuArr, in, out, bias, 0, 0, 0, -1, -1, "Feed Forward", genesize, hid};
 	return ff;
 }
 
@@ -99,6 +101,14 @@ void setFitness(feedForward f, int fitness){
 	f.Fitness = fitness;
 }
 
+void setCatches(feedForward f,int c){
+	f.Catches = c;
+}
+
+int getCatches(feedForward f){
+	return f.Catches;
+}
+
 int getFitness(feedForward f){
 	return f.Fitness;
 }
@@ -129,5 +139,9 @@ void resetActivation(feedForward f){
 void resetFitness(feedForward f){
 	f.Fitness = 0;
 	f.Trials = 0;
+}
+
+void resetCatches(feedForward f){
+	f.Catches = 0;
 }
 #endif

@@ -15,7 +15,8 @@ double CauchyRand(double range){
 	double cut = 10.0;
 	srand(time(0));
 	while(u == 0.5){
-		u = rand();
+		u = 0+(1-0) * rand()/((double)RAND_MAX);
+		printf("%f\n", u);
 	}
 
 	u = range * tan(u*Pi);

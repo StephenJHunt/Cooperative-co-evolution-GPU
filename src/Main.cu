@@ -41,10 +41,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 //globals
-Network* bestTeam;
+feedForward* bestTeam;
 Population* subPops;
-Population** predSubPops;
+Population** predSubPops;//Population** ?
 Gridworld world;
+int catches;
 
 //input params with default values
 bool sim = false;
@@ -56,6 +57,7 @@ int burstGens = 10;
 int maxGens = 100000;
 int goalFitness = 100000;
 int numPreds = 3;
+int reeee;
 
 struct tempState{
 	int* PredatorX;
@@ -90,7 +92,7 @@ int calculateDistance(int predX, int predY, int preyX ,int preyY){
 	return int(xDist + yDist);
 }
 
-Network* evaluate(PredatorPrey e, feedForward* team){
+feedForward* evaluate(PredatorPrey e, feedForward* team, int numTeams){
 	int fitness =0;
 	int steps = 0;
 	int maxSteps = 150;
@@ -104,7 +106,7 @@ Network* evaluate(PredatorPrey e, feedForward* team){
 	State state;
 	tempState tmpstate;
 
-	tempState* states;
+//	tempState* states;
 
 	State* statepntr = getState(e);
 	Gridworld* worldpntr = getWorld(e);
@@ -121,21 +123,145 @@ Network* evaluate(PredatorPrey e, feedForward* team){
 	avg_init_dist = avg_init_dist/numPreds;
 
 	while(!Caught(e) && steps < maxSteps){
-		//stuff
-	}
-}
+		for(int p=0; p < numPreds;p++){
+			currentDist = calculateDistance(state.PredatorX[p], state.PredatorY[p], state.PreyX, state.PreyY);
+			if(currentDist<nearestDist){
+				nearestDist = currentDist;
+				nearestPred = p;
+			}
+		}
 
+		PerformPreyAction(e, nearestPred);
+
+		for(int pred = 0; pred < numTeams;pred++){
+			input[0] = double(state.PreyX);
+			input[1] = double(state.PreyY);
+
+			double* out = Activate(team[pred], input, inplen, output);
+			PerformPredatorAction(e, pred, out, team[pred].NumOutputs);
+		}
+		State* ts = getState(e);
+		state = *ts;
+		steps++;
+
+		//output state
+		for(int pred = 0;pred < numPreds;pred++){
+			printf("Predator %d, %d\n", state.PredatorX[pred], state.PredatorY[pred]);
+		}
+		printf("prey %d, %d \n", state.PreyX, state.PreyY);
+
+		//state list made here
+	}
+
+	if(Caught(e)){
+		if(sim == true){
+			printf("Simulation Complete\n");
+			printf("Predator at position %d, %d caught the prey at position %d, %d after %d steps", state.PredatorX[nearestPred], state.PredatorY[nearestPred], state.PreyX, state.PreyY, steps);
+		}
+	}
+
+	for(int p = 0; p < numPreds;p++){
+		avg_final_dist = avg_final_dist + calculateDistance(state.PredatorX[p], state.PredatorY[p], state.PreyX, state.PreyY);
+	}
+	avg_final_dist = avg_final_dist/numPreds;
+
+	if(!Caught(e)){
+		fitness = (avg_init_dist - avg_final_dist)/10;
+	}else{
+		fitness = (200 - avg_final_dist)/10;
+		catches++;
+	}
+	for(int pred = 0; pred < numTeams;pred++){
+		setFitness(team[pred], fitness);
+		setNeuronFitness(team[pred]);
+	}
+	return team;
+
+}
 int main(int argc, char **argv)
 {
-
-
-//	char* test = "hello";//this is a string now
 	runTests();
+//	printf("\n\nExecution\n\n");
+/*
+
+	numInputs = 2;
+	hidden = 5;
+	numOutputs = 5;
+	numIndivs = 10;
+	maxGens = 1000;
+	goalFitness = 100;
+	numPreds = 3;
+
+
+	//parse input
+
+
+	double mutationRate = 0.4;
+//	printf("Number of inputs is %d\n", numInputs);
+//	printf("Number of hidden units is %d\n", hidden);
+//	printf("Number of outputs is %d\n", numOutputs);
+//	printf("Number of individuals per population is %d\n", numIndivs);
+//	printf("Max number of generations is %d\n", maxGens);
+//	printf("Mutation rate is %f\n", mutationRate);
+//	printf("Burst mutate after %d generations\n", burstGens);
+//	printf("Number of predators is %d\n", numPreds);
+
+//	int* performanceQueue = new int[burstGens];
+	int bestFitness = 0;
+	int generations = 0;
+
+	predSubPops = new Population*[numPreds];
+	//initialisation
+	for(int p = 0;p<numPreds;p++){
+		feedForward* ff = newFeedForward(numInputs, hidden, numOutputs, false);
+		Population* subpops = init(hidden, numIndivs, ff->GeneSize);
+		predSubPops[p] = subpops;
+	}
+
+	int numTrials = 10 * numIndivs;
+	feedForward* team = new feedForward[numPreds];
+	while(generations < maxGens && catches < numTrials){
+		catches = 0;
+
+		for(int x = 0; x < numTrials;x++){
+
+			for(int f = 0;f<numPreds;f++){
+				feedForward* ff = newFeedForward(numInputs, hidden, numOutputs, false);
+				Create(*ff, predSubPops[f], hidden);
+				team[f] = *ff;
+			}
+			PredatorPrey* pp = newPredatorPrey(numPreds);
+			reset(*pp, numPreds);
+
+			feedForward* t = evaluate(*pp, team, numPreds);
+
+			if(getFitness(t[0]) > bestFitness){
+				bestFitness = getFitness(t[0]);
+				bestTeam = t;
+
+				for(int i = 0;i<hidden;i++){
+					Tag(bestTeam[i]);
+				}
+			}
+		}
+
+		printf("Generation %d, best fitness is %d, catches is %d\n", generations, bestFitness, catches);
+
+		for(int i = 0 ;i<numPreds;i++){
+			for(int j = 0;j<hidden;j++){
+				sortNeurons(predSubPops[i][j]);
+				mate(predSubPops[i][j]);
+				mutate(predSubPops[i][j], mutationRate);
+			}
+		}
+		generations++;
+	}
+//	char* test = "hello";//this is a string now
 	//printf(test);
 	//printf("\n");
     //printf("Hello World!\n");
     //CUDAHello<<<1,10>>>();
 //    cudaDeviceReset();
-    //
+    //*/
 }
 

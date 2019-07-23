@@ -18,8 +18,9 @@ struct PredatorPrey{
 	Gridworld* world;
 };
 
-PredatorPrey* newPredatorPrey(){
-	return new PredatorPrey{"Predator Prey Task", new State, new Gridworld};
+PredatorPrey* newPredatorPrey(int numPreds){
+	State* st = new State{new int[numPreds], new int[numPreds], 0, 0};
+	return new PredatorPrey{"Predator Prey Task", st, new Gridworld};
 }
 
 void reset(PredatorPrey pp, int n){
@@ -33,7 +34,7 @@ void reset(PredatorPrey pp, int n){
 		pp.state->PredatorX[i] = i*2;
 		pp.state->PredatorY[i] = 0;
 	}
-	caught = false;
+	pp.state->Caught = false;
 }
 
 int getMaxPosition(double* action, int actionlen){

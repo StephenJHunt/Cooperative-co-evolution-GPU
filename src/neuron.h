@@ -24,25 +24,20 @@ struct Neuron{
 	bool Tag;
 };
 
-int counter = 0;
+int Ncounter = 0;
 
 Neuron* newNeuron(int size){
-	counter++;
+	Ncounter++;
 	double* w = new double[size];
-	Neuron* n = new Neuron{-1, -1, counter, "Neuron", w, size};
-	/*n.ID = counter;
-	n.Weight = new double[size];
-	n.Name = "Neuron";
-	n.Parent1 = -1;
-	n.Parent2 = -1;
-	n.size = size;*/
+	Neuron* n = new Neuron{-1, -1, Ncounter, "Neuron", w, size};
 	return n;
 }
 
 void createWeights(Neuron n, int size){
 	srand(time(0));
 	for(int i=0;i<size;i++){
-		n.Weight[i] = (rand() * 12.0) - 6.0;
+		double r = (double)((rand() % (13 - 6)) + 6);
+		n.Weight[i] = r;
 	}
 }
 
