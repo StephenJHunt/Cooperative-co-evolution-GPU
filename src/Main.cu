@@ -59,6 +59,7 @@ int burstGens = 10;
 int maxGens = 100000;
 int goalFitness = 100000;
 int numPreds = 3;
+int trialsPerEval = 9;
 
 struct tempState{
 	int* PredatorX;
@@ -94,86 +95,93 @@ int calculateDistance(int predX, int predY, int preyX ,int preyY){
 }
 
 feedForward* evaluate(PredatorPrey e, feedForward* team, int numTeams){
-	int fitness =0;
-	int steps = 0;
-	int maxSteps = 150;
-	int avg_init_dist = 0;
-	int avg_final_dist = 0;
+	catches = 0;
+	int total_fitness = 0;
 
-	int inplen = getTotalInputs(team[0]);
-	int outlen = getTotalOutputs(team[0]);
-	double* input = new double[inplen];
-	double* output = new double[outlen];
-	State state;
-	tempState tmpstate;
+	int PreyPositions[2][9] = {{16, 50, 82, 82, 82, 16, 50, 50, 82},{50, 50, 50, 82, 16, 50, 16, 82, 50}};
 
-//	tempState* states;
+	for(int l = 0;l < trialsPerEval;l++){
+		int fitness =0;
+		int steps = 0;
+		int maxSteps = 150;
+		int avg_init_dist = 0;
+		int avg_final_dist = 0;
 
-	State* statepntr = getState(e);
-	Gridworld* worldpntr = getWorld(e);
-	state = *statepntr;
-	world = *worldpntr;
+		int inplen = getTotalInputs(team[0]);
+		int outlen = getTotalOutputs(team[0]);
+		double* input = new double[inplen];
+		double* output = new double[outlen];
+		State state;
 
-	int nearestDist = 0;
-	int nearestPred = 0;
-	int currentDist = 0;
+		setPreyPosition(e, *PreyPositions[l], *PreyPositions[l]);
+		State* statepntr = getState(e);
+		Gridworld* worldpntr = getWorld(e);
+		state = *statepntr;
+		world = *worldpntr;
 
-	for(int p = 0 ; p < numPreds; p++){
-		avg_init_dist = avg_init_dist + calculateDistance(state.PredatorX[p], state.PredatorY[p], state.PreyX, state.PreyY);
-	}
-	avg_init_dist = avg_init_dist/numPreds;
+		int nearestDist = 0;
+		int nearestPred = 0;
+		int currentDist = 0;
 
-	while(!Caught(e) && steps < maxSteps){
-		for(int p=0; p < numPreds;p++){
-			currentDist = calculateDistance(state.PredatorX[p], state.PredatorY[p], state.PreyX, state.PreyY);
-			if(currentDist<nearestDist){
-				nearestDist = currentDist;
-				nearestPred = p;
+		for(int p = 0 ; p < numPreds; p++){
+			avg_init_dist = avg_init_dist + calculateDistance(state.PredatorX[p], state.PredatorY[p], state.PreyX, state.PreyY);
+		}
+		avg_init_dist = avg_init_dist/numPreds;
+
+		while(!Caught(e) && steps < maxSteps){
+			for(int p=0; p < numPreds;p++){
+				currentDist = calculateDistance(state.PredatorX[p], state.PredatorY[p], state.PreyX, state.PreyY);
+				if(currentDist<nearestDist){
+					nearestDist = currentDist;
+					nearestPred = p;
+				}
+			}
+
+			PerformPreyAction(e, nearestPred);
+
+			for(int pred = 0; pred < numTeams;pred++){
+				input[0] = double(state.PreyX);
+				input[1] = double(state.PreyY);
+
+				double* out = Activate(team[pred], input, inplen, output);
+				PerformPredatorAction(e, pred, out, team[pred].NumOutputs);
+			}
+			State* ts = getState(e);
+			state = *ts;
+			steps++;
+
+			//output state
+				for(int pred = 0;pred < numPreds;pred++){
+					printf("Predator %d, %d\n", state.PredatorX[pred], state.PredatorY[pred]);
+				}
+				printf("prey %d, %d \n", state.PreyX, state.PreyY);
+
+		}
+
+		if(Caught(e)){
+			if(sim == true){
+				printf("Simulation Complete\n");
+				printf("Predator at position %d, %d caught the prey at position %d, %d after %d steps", state.PredatorX[nearestPred], state.PredatorY[nearestPred], state.PreyX, state.PreyY, steps);
 			}
 		}
 
-		PerformPreyAction(e, nearestPred);
-
-		for(int pred = 0; pred < numTeams;pred++){
-			input[0] = double(state.PreyX);
-			input[1] = double(state.PreyY);
-
-			double* out = Activate(team[pred], input, inplen, output);
-			PerformPredatorAction(e, pred, out, team[pred].NumOutputs);
+		for(int p = 0; p < numPreds;p++){
+			avg_final_dist = avg_final_dist + calculateDistance(state.PredatorX[p], state.PredatorY[p], state.PreyX, state.PreyY);
 		}
-		State* ts = getState(e);
-		state = *ts;
-		steps++;
+		avg_final_dist = avg_final_dist/numPreds;
 
-		//output state
-		for(int pred = 0;pred < numPreds;pred++){
-			printf("Predator %d, %d\n", state.PredatorX[pred], state.PredatorY[pred]);
+		if(!Caught(e)){
+			fitness = (avg_init_dist - avg_final_dist)/10;
+		}else{
+			fitness = (200 - avg_final_dist)/10;
+			catches++;
 		}
-		printf("prey %d, %d \n", state.PreyX, state.PreyY);
-
-		//state list made here
+		total_fitness = total_fitness + fitness;
 	}
 
-	if(Caught(e)){
-		if(sim == true){
-			printf("Simulation Complete\n");
-			printf("Predator at position %d, %d caught the prey at position %d, %d after %d steps", state.PredatorX[nearestPred], state.PredatorY[nearestPred], state.PreyX, state.PreyY, steps);
-		}
-	}
-
-	for(int p = 0; p < numPreds;p++){
-		avg_final_dist = avg_final_dist + calculateDistance(state.PredatorX[p], state.PredatorY[p], state.PreyX, state.PreyY);
-	}
-	avg_final_dist = avg_final_dist/numPreds;
-
-	if(!Caught(e)){
-		fitness = (avg_init_dist - avg_final_dist)/10;
-	}else{
-		fitness = (200 - avg_final_dist)/10;
-		catches++;
-	}
 	for(int pred = 0; pred < numTeams;pred++){
-		setFitness(team[pred], fitness);
+		setFitness(team[pred], (total_fitness/trialsPerEval));
+		setCatches(team[pred], catches);
 		setNeuronFitness(team[pred]);
 	}
 	return team;
@@ -186,12 +194,12 @@ int main(int argc, char **argv)
 /*
 
 	numInputs = 2;
-	hidden = 5;
+	hidden = 15;
 	numOutputs = 5;
-	numIndivs = 10;
+	numIndivs = 640;
 	maxGens = 1000;
 	goalFitness = 100;
-	numPreds = 3;
+	numPreds = 6;
 
 
 	//parse input
