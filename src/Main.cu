@@ -189,9 +189,9 @@ feedForward* evaluate(PredatorPrey e, feedForward* team, int numTeams){
 }
 int main(int argc, char **argv)
 {
-	runTests();
+//	runTests();
 //	printf("\n\nExecution\n\n");
-/*
+
 
 	numInputs = 2;
 	hidden = 15;
@@ -204,7 +204,7 @@ int main(int argc, char **argv)
 
 	//parse input
 
-
+	bool stagnated;
 	double mutationRate = 0.4;
 //	printf("Number of inputs is %d\n", numInputs);
 //	printf("Number of hidden units is %d\n", hidden);
@@ -214,10 +214,12 @@ int main(int argc, char **argv)
 //	printf("Mutation rate is %f\n", mutationRate);
 //	printf("Burst mutate after %d generations\n", burstGens);
 //	printf("Number of predators is %d\n", numPreds);
+//  printf("Number of team trials per evaluation is %d\n", trialsPerEval);
 
 //	int* performanceQueue = new int[burstGens];
 	int bestFitness = 0;
 	int generations = 0;
+	stagnated = false;
 
 	predSubPops = new Population*[numPreds];
 	//initialisation
@@ -243,6 +245,7 @@ int main(int argc, char **argv)
 			reset(*pp, numPreds);
 
 			feedForward* t = evaluate(*pp, team, numPreds);
+			catches = catches + getCatches(t[0]);
 
 			if(getFitness(t[0]) > bestFitness){
 				bestFitness = getFitness(t[0]);
@@ -256,13 +259,33 @@ int main(int argc, char **argv)
 
 		printf("Generation %d, best fitness is %d, catches is %d\n", generations, bestFitness, catches);
 
-		for(int i = 0 ;i<numPreds;i++){
-			for(int j = 0;j<hidden;j++){
-				sortNeurons(predSubPops[i][j]);
-				mate(predSubPops[i][j]);
-				mutate(predSubPops[i][j], mutationRate);
+		if(generations%burstGens == 0 && generations != 0){
+			//burst mutate
+			stagnated = true;
+
+			for(int pred = 0; pred < numPreds; pred++){
+				Population* predPop = predSubPops[pred];
+				for(int i = 0; i< numIndivs;i++){
+					Population* subpop = predPop[i];
+					for(int n = 0; n< numIndivs;n++){
+						Neuron* n = subpop->Individuals[i];
+						Neuron* hid = getHiddenUnits(bestTeam[0]);
+						perturb(*n, hid[i], numIndivs);
+					}
+				}
 			}
 		}
+		if(!stagnated){
+			for(int i = 0 ;i<numPreds;i++){
+				for(int j = 0;j<hidden;j++){
+					sortNeurons(predSubPops[i][j]);
+					mate(predSubPops[i][j]);
+					mutate(predSubPops[i][j], mutationRate);
+				}
+			}
+		}
+		stagnated = false;
+		//reset teams?? doens't seem to do anything
 		generations++;
 	}
 //	char* test = "hello";//this is a string now
@@ -271,6 +294,6 @@ int main(int argc, char **argv)
     //printf("Hello World!\n");
     //CUDAHello<<<1,10>>>();
 //    cudaDeviceReset();
-    //*/
+    //
 }
 
