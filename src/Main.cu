@@ -32,8 +32,10 @@
 //include other files
 #include "test.h"
 #include "random.h"
-#include "environment.h"
-#include "network.h"
+//#include "environment.h"
+#include "predatorprey.h"
+//#include "network.h"
+#include "feedforward.h"
 #include "population.h"
 
 ////////////////////////////////////////////////////////////////////////////////
