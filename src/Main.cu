@@ -266,11 +266,11 @@ int main(int argc, char **argv)
 			for(int pred = 0; pred < numPreds; pred++){
 				Population* predPop = predSubPops[pred];
 				for(int i = 0; i< numIndivs;i++){
-					Population* subpop = predPop[i];
+					Population subpop = predPop[i];
 					for(int n = 0; n< numIndivs;n++){
-						Neuron* n = subpop->Individuals[i];
+						Neuron indiv = subpop.Individuals[i];
 						Neuron* hid = getHiddenUnits(bestTeam[0]);
-						perturb(*n, hid[i], numIndivs);
+						perturb(indiv, hid[i], numIndivs);
 					}
 				}
 			}
