@@ -57,7 +57,6 @@ int burstGens = 10;
 int maxGens = 100000;
 int goalFitness = 100000;
 int numPreds = 3;
-int reeee;
 
 struct tempState{
 	int* PredatorX;
