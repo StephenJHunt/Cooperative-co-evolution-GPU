@@ -42,8 +42,8 @@ Population* newPopulation(int size, int genesize){
 	return p;
 }
 /*
-bool isLess(Neuron* n, int i, int j){
-	Neuron arr[] = *n;
+bool Less(Neuron* n, int i, int j){
+	Neuron arr = *n;
 	Neuron n1 = arr[i];
 	Neuron n2 = arr[j];
 	int div1 = n1.Trials;
@@ -74,8 +74,22 @@ Neuron selectNeuron(Population p){
 	return p.Individuals[idx];
 }
 
+bool operator<(Neuron n1, Neuron n2){
+	int size = n1.size;
+	int div1 = n1.Trials;
+	int div2 = n2.Trials;
+	if(div1 == 0){
+		div1 = 1;
+	}
+	if(div2 == 0){
+		div2 = 1;
+	}
+	return (n1.Fitness / div1) < (n2.Fitness / div2);
+}
+
 void sortNeurons(Population p){
-	//sort(p.Individuals, p.Individuals + p.numIndividuals);//import isn't working or something
+	std::sort(p.Individuals, p.Individuals + p.numIndividuals);//
+
 }
 
 void onePointCrossover(Neuron parent1, Neuron parent2, Neuron child1, Neuron child2){
