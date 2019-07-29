@@ -65,7 +65,7 @@ double* Activate(feedForward f, double* input, int inputLen, double* output){
 			Neuron n = f.HiddenUnits[key];
 			output[i] = output[i] + (f.Activation[key] * n.Weight[inputLen + i]);
 		}
-		output[i] = Logistic(1.0, output[i]);
+		output[i] = Direction((double)output[i]);//call different
 	}
 	return output;
 }
