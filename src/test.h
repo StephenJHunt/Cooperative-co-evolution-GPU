@@ -104,12 +104,12 @@ void testPredatorPrey(){
 
 void runTests(){
 	testRandom();
-	testSigmoid();
-	testPop();
-	testFF();
-	testNetwork();
-	testEnvironment();
-	testPredatorPrey();
+//	testSigmoid();
+//	testPop();
+//	testFF();
+//	testNetwork();
+//	testEnvironment();
+//	testPredatorPrey();
 
 }
 

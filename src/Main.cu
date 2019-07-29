@@ -151,11 +151,11 @@ feedForward* evaluate(PredatorPrey e, feedForward* team, int numTeams){
 			steps++;
 
 			//output state
-				for(int pred = 0;pred < numPreds;pred++){
-					printf("Predator %d, %d\n", state.PredatorX[pred], state.PredatorY[pred]);
-				}
-				printf("prey %d, %d \n", state.PreyX, state.PreyY);
-
+			/*for(int pred = 0;pred < numPreds;pred++){
+				printf("Predator %d, %d\n", state.PredatorX[pred], state.PredatorY[pred]);
+			}
+			printf("prey %d, %d \n", state.PreyX, state.PreyY);
+*/
 		}
 
 		if(Caught(e)){
@@ -196,10 +196,11 @@ int main(int argc, char **argv)
 	numInputs = 2;
 	hidden = 15;
 	numOutputs = 5;
-	numIndivs = 640;
-	maxGens = 1000;
+	numIndivs = 10;//540
+	maxGens = 100;
 	goalFitness = 100;
-	numPreds = 6;
+	numPreds = 6;//6
+	burstGens = 2;
 
 
 	//parse input
