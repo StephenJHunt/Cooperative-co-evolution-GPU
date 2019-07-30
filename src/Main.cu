@@ -151,13 +151,13 @@ feedForward* evaluate(PredatorPrey e, feedForward* team, int numTeams){
 			State* ts = getState(e);
 			state = *ts;
 			steps++;
-///*
+/*
 			//output state
 			for(int pred = 0;pred < numPreds;pred++){
 				printf("Predator %d, %d\n", state.PredatorX[pred], state.PredatorY[pred]);
 			}
 			printf("prey %d, %d \n", state.PreyX, state.PreyY);
-//*/
+*/
 		}
 
 		if(Caught(e)){
@@ -204,7 +204,7 @@ int main(int argc, char **argv)
 	numInputs = 2;
 	hidden = 15;
 	numOutputs = 5;
-	numIndivs = 100;//540
+	numIndivs = 540;//540
 	maxGens = 100;
 	goalFitness = 100;
 	numPreds = 3;//6
@@ -255,7 +255,7 @@ int main(int argc, char **argv)
 
 			feedForward* t = evaluate(*pp, team, numPreds);
 			catches = catches + getCatches(t[0]);
-			if(bestFitness == 0){
+			if(bestFitness == 0 && !teamfound){
 				bestFitness = getFitness(t[0]);
 			}
 			printf("best fitness %d\n", bestFitness);
@@ -263,11 +263,53 @@ int main(int argc, char **argv)
 			if(getFitness(t[0]) > bestFitness){
 				bestFitness = getFitness(t[0]);
 				double* bestActivation = new double[t->numHidden];
-				bestTeam = new feedForward*{t->ID, t->Activation, };
-
+				Neuron* bestNeurons = new Neuron[t->numHidden];
+				for(int i = 0;i<t->numHidden;i++){
+					bestActivation[i] = t->Activation[i];
+					bestNeurons[i] = t->HiddenUnits[i];
+				}
+				bestTeam = new feedForward;
+				bestTeam->ID = t->ID;
+				bestTeam->Catches = t->Catches;
+				bestTeam->Fitness = t->Fitness;
+				bestTeam->GeneSize = t->GeneSize;
+				bestTeam->NumInputs = t->NumInputs;
+				bestTeam->NumOutputs = t->NumOutputs;
+				bestTeam->Parent1 = t->Parent1;
+				bestTeam->Parent2 = t->Parent2;
+				bestTeam->Trials = t->Trials;
+				bestTeam->bias = t->bias;
+				bestTeam->name = t->name;
+				bestTeam->numHidden = t->numHidden;
+				bestTeam->Activation=bestActivation;
+				bestTeam->HiddenUnits = bestNeurons;
 				for(int i = 0;i<numPreds;i++){
 					Tag(bestTeam[i]);
 				}
+			}
+			if(!teamfound){
+				teamfound = true;
+				double* bestActivation = new double[t->numHidden];
+				Neuron* bestNeurons = new Neuron[t->numHidden];
+				for(int i = 0;i<t->numHidden;i++){
+					bestActivation[i] = t->Activation[i];
+					bestNeurons[i] = t->HiddenUnits[i];
+				}
+				bestTeam = new feedForward;
+				bestTeam->ID = t->ID;
+				bestTeam->Catches = t->Catches;
+				bestTeam->Fitness = t->Fitness;
+				bestTeam->GeneSize = t->GeneSize;
+				bestTeam->NumInputs = t->NumInputs;
+				bestTeam->NumOutputs = t->NumOutputs;
+				bestTeam->Parent1 = t->Parent1;
+				bestTeam->Parent2 = t->Parent2;
+				bestTeam->Trials = t->Trials;
+				bestTeam->bias = t->bias;
+				bestTeam->name = t->name;
+				bestTeam->numHidden = t->numHidden;
+				bestTeam->Activation=bestActivation;
+				bestTeam->HiddenUnits = bestNeurons;
 			}
 		}
 
