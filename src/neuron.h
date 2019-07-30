@@ -57,9 +57,9 @@ void perturb(Neuron n, Neuron best, int size){
 	n.Trials = 0;
 }
 
-void reset(Neuron n){
-	n.Fitness = 0;
-	n.Trials = 0;
+void reset(Neuron* n){
+	n->Fitness = 0;
+	n->Trials = 0;
 }
 
 

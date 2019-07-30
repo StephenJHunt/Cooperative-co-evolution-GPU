@@ -185,9 +185,18 @@ feedForward* evaluate(PredatorPrey e, feedForward* team, int numTeams){
 	}
 
 	for(int pred = 0; pred < numTeams;pred++){
-		setFitness(team[pred], (total_fitness/trialsPerEval));
-		setCatches(team[pred], catches);
-		setNeuronFitness(team[pred]);
+//		feedForward currFF  = team[pred];
+		team[pred].Fitness = (total_fitness); ///trialsPerEval
+		team[pred].Catches = catches;
+		for(int i = 0; i<team[pred].numHidden;i++){
+			Neuron* n = team[pred].HiddenUnits[i];
+			n->Fitness = team[pred].Fitness;
+			n->Trials++;
+			team[pred].HiddenUnits[i] = n;
+		}
+//		setFitness(currFF, (total_fitness/trialsPerEval));
+//		setCatches(currFF, catches);
+//		setNeuronFitness(currFF);
 	}
 	printf("fitness before return %d\n", total_fitness);
 	return team;
@@ -204,11 +213,11 @@ int main(int argc, char **argv)
 	numInputs = 2;
 	hidden = 15;
 	numOutputs = 5;
-	numIndivs = 540;//540
+	numIndivs = 10;//540
 	maxGens = 100;
 	goalFitness = 100;
 	numPreds = 3;//6
-	burstGens = 2;
+	burstGens = 4;
 
 
 	//parse input
@@ -263,7 +272,7 @@ int main(int argc, char **argv)
 			if(getFitness(t[0]) > bestFitness){
 				bestFitness = getFitness(t[0]);
 				double* bestActivation = new double[t->numHidden];
-				Neuron* bestNeurons = new Neuron[t->numHidden];
+				Neuron** bestNeurons = new Neuron*[t->numHidden];
 				for(int i = 0;i<t->numHidden;i++){
 					bestActivation[i] = t->Activation[i];
 					bestNeurons[i] = t->HiddenUnits[i];
@@ -290,7 +299,7 @@ int main(int argc, char **argv)
 			if(!teamfound){
 				teamfound = true;
 				double* bestActivation = new double[t->numHidden];
-				Neuron* bestNeurons = new Neuron[t->numHidden];
+				Neuron** bestNeurons = new Neuron*[t->numHidden];
 				for(int i = 0;i<t->numHidden;i++){
 					bestActivation[i] = t->Activation[i];
 					bestNeurons[i] = t->HiddenUnits[i];
@@ -324,9 +333,12 @@ int main(int argc, char **argv)
 				for(int i = 0; i< numIndivs;i++){
 					Population subpop = predPop[i];
 					for(int n = 0; n< numIndivs;n++){
-						Neuron indiv = subpop.Individuals[i];
-						Neuron* hid = getHiddenUnits(bestTeam[0]);
-						perturb(indiv, hid[i], numIndivs);
+						Neuron* indiv = subpop.Individuals[n];
+						Neuron** hid = getHiddenUnits(bestTeam[0]);
+//						if(n ==19){
+//							n = 19;
+//						}
+						perturb(*indiv, *hid[i], bestTeam->GeneSize);
 					}
 				}
 			}
@@ -334,6 +346,7 @@ int main(int argc, char **argv)
 		if(!stagnated){
 			for(int i = 0 ;i<numPreds;i++){
 				for(int j = 0;j<hidden;j++){
+					Population p = predSubPops[i][j];
 					sortNeurons(predSubPops[i][j]);
 					mate(predSubPops[i][j]);
 					mutate(predSubPops[i][j], mutationRate);

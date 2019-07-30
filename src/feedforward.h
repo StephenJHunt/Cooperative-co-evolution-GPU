@@ -23,7 +23,7 @@
 struct feedForward {
 	int ID;
 	double* Activation;
-	Neuron* HiddenUnits;
+	Neuron** HiddenUnits;
 	int NumInputs;
 	int NumOutputs;
 	bool bias;
@@ -45,32 +45,32 @@ feedForward* newFeedForward(int in, int hid, int out, bool bias){
 		genesize++;
 	}
 	double* actArr = new double[hid];
-	Neuron* neuArr = new Neuron[hid];
+	Neuron** neuArr = new Neuron*[hid];
 	feedForward* ff = new feedForward{counter, actArr, neuArr, in, out, bias, 0, 0, 0, -1, -1, "Feed Forward", genesize, hid};
 	return ff;
 }
 
 double* Activate(feedForward f, double* input, int inputLen, double* output){
 	for(int key = 0; key< f.numHidden;key++){
-		Neuron n = f.HiddenUnits[key];
-		if(!n.Lesioned){
+		Neuron* n = f.HiddenUnits[key];
+		if(!n->Lesioned){
 			for(int i = 0; i< inputLen;i++){
-				f.Activation[key] = f.Activation[key] + (n.Weight[i] * input[i]);
+				f.Activation[key] = f.Activation[key] + (n->Weight[i] * input[i]);
 			}
 			f.Activation[key] = Logistic(1.0, f.Activation[key]);
 		}
 	}
 	for(int i=0;i<f.NumOutputs;i++){
 		for(int key = 0; key<f.numHidden; key++){
-			Neuron n = f.HiddenUnits[key];
-			output[i] = output[i] + (f.Activation[key] * n.Weight[inputLen + i]);
+			Neuron* n = f.HiddenUnits[key];
+			output[i] = output[i] + (f.Activation[key] * n->Weight[inputLen + i]);
 		}
 //		output[i] = Direction((double)output[i]);//call different
 	}
 	return output;
 }
 
-Neuron* getHiddenUnits(feedForward f){
+Neuron** getHiddenUnits(feedForward f){
 	return f.HiddenUnits;
 }
 
@@ -119,16 +119,16 @@ int getID(feedForward f){
 
 void setNeuronFitness(feedForward f){
 	for(int i = 0; i<f.numHidden;i++){
-		Neuron n = f.HiddenUnits[i];
-		setFitness(n, f.Fitness);
-		n.Trials++;
+		Neuron* n = f.HiddenUnits[i];
+		setFitness(*n, f.Fitness);
+		n->Trials++;
 	}
 }
 
 void Tag(feedForward f){
 	for(int i = 0; i<f.numHidden;i++){
-		Neuron n = f.HiddenUnits[i];
-		n.Tag = true;
+		Neuron* n = f.HiddenUnits[i];
+		n->Tag = true;
 	}
 }
 

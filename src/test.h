@@ -44,7 +44,7 @@ void testPop(){
 //	Neuron nr = deref.Individuals[0];
 
 	createIndividuals(deref);
-	Neuron t = selectNeuron(deref);
+	Neuron* t = selectNeuron(deref);
 	mate(deref);
 	mutate(deref, 0.3);
 //	growIndividuals(deref);
