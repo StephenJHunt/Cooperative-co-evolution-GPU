@@ -71,7 +71,7 @@ int getMaxPosition(double* action, int actionlen){
 
 void PerformPredatorAction(PredatorPrey pp, int pos, double* action, int actionlen){
 	int predAction = getMaxPosition(action, actionlen);
-	printf("predaction:%d\n", predAction);
+//	printf("predaction:%d\n", predAction);
 	//possible movements. NESW in order
 	if(predAction == 0){
 		pp.state->PredatorY[pos]++;

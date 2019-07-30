@@ -140,9 +140,10 @@ feedForward* evaluate(PredatorPrey e, feedForward* team, int numTeams){
 			PerformPreyAction(e, nearestPred);
 
 			for(int pred = 0; pred < numTeams;pred++){
-				input[0] = double(state.PreyX);
-				input[1] = double(state.PreyY);
-
+				input[0] = double(e.state->PreyX);
+				input[1] = double(e.state->PreyY);
+				delete[] output;
+				output = new double[outlen];//reset output in between?
 				double* out = Activate(team[pred], input, inplen, output);
 				PerformPredatorAction(e, pred, out, team[pred].NumOutputs);
 //				printf("\n");
@@ -188,9 +189,12 @@ feedForward* evaluate(PredatorPrey e, feedForward* team, int numTeams){
 		setCatches(team[pred], catches);
 		setNeuronFitness(team[pred]);
 	}
+	printf("fitness before return %d\n", total_fitness);
 	return team;
 
 }
+
+
 int main(int argc, char **argv)
 {
 //	runTests();
@@ -200,7 +204,7 @@ int main(int argc, char **argv)
 	numInputs = 2;
 	hidden = 15;
 	numOutputs = 5;
-	numIndivs = 10;//540
+	numIndivs = 100;//540
 	maxGens = 100;
 	goalFitness = 100;
 	numPreds = 3;//6
@@ -255,9 +259,11 @@ int main(int argc, char **argv)
 				bestFitness = getFitness(t[0]);
 			}
 			printf("best fitness %d\n", bestFitness);
+			printf("this team fitness: %d\n", getFitness(t[0]));
 			if(getFitness(t[0]) > bestFitness){
 				bestFitness = getFitness(t[0]);
-				bestTeam = t;
+				double* bestActivation = new double[t->numHidden];
+				bestTeam = new feedForward*{t->ID, t->Activation, };
 
 				for(int i = 0;i<numPreds;i++){
 					Tag(bestTeam[i]);
