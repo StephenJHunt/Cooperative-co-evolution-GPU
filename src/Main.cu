@@ -145,17 +145,18 @@ feedForward* evaluate(PredatorPrey e, feedForward* team, int numTeams){
 
 				double* out = Activate(team[pred], input, inplen, output);
 				PerformPredatorAction(e, pred, out, team[pred].NumOutputs);
+//				printf("\n");
 			}
 			State* ts = getState(e);
 			state = *ts;
 			steps++;
-
+///*
 			//output state
-			/*for(int pred = 0;pred < numPreds;pred++){
+			for(int pred = 0;pred < numPreds;pred++){
 				printf("Predator %d, %d\n", state.PredatorX[pred], state.PredatorY[pred]);
 			}
 			printf("prey %d, %d \n", state.PreyX, state.PreyY);
-*/
+//*/
 		}
 
 		if(Caught(e)){
@@ -166,12 +167,15 @@ feedForward* evaluate(PredatorPrey e, feedForward* team, int numTeams){
 		}
 
 		for(int p = 0; p < numPreds;p++){
+//			printf("Predator %d distance: %d\n", p, calculateDistance(state.PredatorX[p], state.PredatorY[p], state.PreyX, state.PreyY));
 			avg_final_dist = avg_final_dist + calculateDistance(state.PredatorX[p], state.PredatorY[p], state.PreyX, state.PreyY);
+//			printf("avg final dist: %d\n", avg_final_dist);
 		}
 		avg_final_dist = avg_final_dist/numPreds;
 
 		if(!Caught(e)){
-			fitness = (avg_init_dist - avg_final_dist)/10;
+//			printf("fitness eval: avg init:%d, avg final:%d, result:%d\n", avg_init_dist, avg_final_dist, ((avg_init_dist - avg_final_dist)));
+			fitness = (avg_init_dist - avg_final_dist);// /10
 		}else{
 			fitness = (200 - avg_final_dist)/10;
 			catches++;
@@ -199,7 +203,7 @@ int main(int argc, char **argv)
 	numIndivs = 10;//540
 	maxGens = 100;
 	goalFitness = 100;
-	numPreds = 6;//6
+	numPreds = 3;//6
 	burstGens = 2;
 
 
@@ -247,12 +251,15 @@ int main(int argc, char **argv)
 
 			feedForward* t = evaluate(*pp, team, numPreds);
 			catches = catches + getCatches(t[0]);
-
+			if(bestFitness == 0){
+				bestFitness = getFitness(t[0]);
+			}
+			printf("best fitness %d\n", bestFitness);
 			if(getFitness(t[0]) > bestFitness){
 				bestFitness = getFitness(t[0]);
 				bestTeam = t;
 
-				for(int i = 0;i<hidden;i++){
+				for(int i = 0;i<numPreds;i++){
 					Tag(bestTeam[i]);
 				}
 			}

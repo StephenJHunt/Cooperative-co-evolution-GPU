@@ -31,7 +31,7 @@ void reset(PredatorPrey pp, int n){
 	pp.state->PreyY = 50;
 
 	for(int i=0;i<n;i++){
-		if(i>0) pp.state->PredatorX[i] = (i*(99/n)) ;//-1
+		if(i>0) pp.state->PredatorX[i] = (i*2)-1 ;//-1 // (99/n)
 		else pp.state->PredatorX[i] = 0;
 		pp.state->PredatorY[i] = 0;//99
 	}
@@ -44,34 +44,34 @@ void setPreyPosition(PredatorPrey pp,int x, int y){
 }
 
 int getMaxPosition(double* action, int actionlen){
-// double max = 0;
-// int result = 0;
- int n = 0;
- int e = 0;
- int s = 0;
- int w = 0;
- for(int i = 0;i<actionlen;i++){
-	 if(action[i] == 0)n++;
-	 if(action[i] == 1)e++;
-	 if(action[i] == 2)s++;
-	 if(action[i] == 3)w++;
- }
- if(n > e && n > s && n > w)return 0;
- if(e > n && e > s && e > w)return 1;
- if(s > n && s > e && s > w)return 2;
- if(w > n && w > e && w > s)return 3;
-// for(int i = 0;i < actionlen;i++){
-//	 if(action[i] > max){
-//		 max = action[i];
-//		 result = i;
-//	 }
+ double max = 0;
+ int result = 0;
+// int n = 0;
+// int e = 0;
+// int s = 0;
+// int w = 0;
+// for(int i = 0;i<actionlen;i++){
+//	 if(action[i] == 0)n++;
+//	 if(action[i] == 1)e++;
+//	 if(action[i] == 2)s++;
+//	 if(action[i] == 3)w++;
 // }
-// return (int)max;
+// if(n > e && n > s && n > w)return 0;
+// if(e > n && e > s && e > w)return 1;
+// if(s > n && s > e && s > w)return 2;
+// if(w > n && w > e && w > s)return 3;
+ for(int i = 0;i < actionlen-1;i++){
+	 if(action[i] > max){
+		 max = action[i];
+		 result = i;
+	 }
+ }
+ return result;
 }
 
 void PerformPredatorAction(PredatorPrey pp, int pos, double* action, int actionlen){
 	int predAction = getMaxPosition(action, actionlen);
-
+	printf("predaction:%d\n", predAction);
 	//possible movements. NESW in order
 	if(predAction == 0){
 		pp.state->PredatorY[pos]++;

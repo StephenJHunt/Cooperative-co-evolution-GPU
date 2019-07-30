@@ -26,10 +26,10 @@ double Direction(double b){
 		return 2;
 	}
 	else{
-//	if(b > 315.0 || b <= 45.0){
 		return 3;
 	}*/
-
+//	b = (double)((int)b % 360);
+//	printf("direction found: %f\n", b);
 	if(b > 45.0 && b <= 135.0){
 		return 0;
 	}
