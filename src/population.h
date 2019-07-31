@@ -88,7 +88,17 @@ bool operator<(Neuron n1, Neuron n2){
 }
 
 void sortNeurons(Population p){
-	std::sort(p.Individuals, p.Individuals + p.numIndividuals);//
+//	std::sort(p.Individuals, p.Individuals + p.numIndividuals);//is not working
+	for(int i = 0;i<p.numIndividuals;i++){
+		for(int j = 0;j<p.numIndividuals;j++){
+			if(p.Individuals[i]->Fitness > p.Individuals[j]->Fitness){
+				Neuron* temp = p.Individuals[i];
+				p.Individuals[i] = p.Individuals[j];
+				p.Individuals[j] = temp;
+			}
+		}
+
+	}
 
 }
 
