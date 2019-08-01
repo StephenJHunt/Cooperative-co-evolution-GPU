@@ -45,16 +45,17 @@ void setFitness(Neuron n, int fitness){
 	n.Fitness = n.Fitness + fitness;
 }
 
-void perturb(Neuron n, Neuron best, int size){
-	if(!n.Tag){
+Neuron* perturb(Neuron* n, Neuron best, int size){
+	if(!n->Tag){
 		double coef = 0.3;
 		for(int i=0;i<size;i++){
-			n.Weight[i] = best.Weight[i] + CauchyRand(coef);
+			n->Weight[i] = best.Weight[i] + CauchyRand(coef);
 		}
 	}
 	//reset
-	n.Fitness = 0;
-	n.Trials = 0;
+	n->Fitness = 0;
+	n->Trials = 0;
+	return n;
 }
 
 void reset(Neuron* n){

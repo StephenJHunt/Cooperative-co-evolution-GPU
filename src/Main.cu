@@ -201,7 +201,7 @@ feedForward* evaluate(PredatorPrey e, feedForward* team, int numTeams){
 //		setCatches(currFF, catches);
 //		setNeuronFitness(currFF);
 	}
-	printf("fitness before return %d\n", total_fitness);
+//	printf("fitness before return %d\n", total_fitness);
 	return team;
 
 }
@@ -214,13 +214,13 @@ int main(int argc, char **argv)
 
 
 	numInputs = 2;
-	hidden = 15;
+	hidden = 150;
 	numOutputs = 5;
-	numIndivs = 10;//540
+	numIndivs = 540;//540
 	maxGens = 100;
 	goalFitness = 100;
 	numPreds = 3;//6
-	burstGens = 4;
+	burstGens = 2;
 
 
 	//parse input
@@ -271,7 +271,7 @@ int main(int argc, char **argv)
 				bestFitness = getFitness(t[0]);
 			}
 			printf("best fitness %d\n", bestFitness);
-			printf("this team fitness: %d\n", getFitness(t[0]));
+//			printf("this team fitness: %d\n", getFitness(t[0]));
 			if(getFitness(t[0]) > bestFitness){
 				bestFitness = getFitness(t[0]);
 				double* bestActivation = new double[t->numHidden];
@@ -333,7 +333,7 @@ int main(int argc, char **argv)
 
 			for(int pred = 0; pred < numPreds; pred++){
 				Population* predPop = predSubPops[pred];
-				for(int i = 0; i< numIndivs;i++){
+				for(int i = 0; i< hidden;i++){
 					Population subpop = predPop[i];
 					for(int n = 0; n< numIndivs;n++){
 						Neuron* indiv = subpop.Individuals[n];
@@ -341,7 +341,7 @@ int main(int argc, char **argv)
 //						if(n ==19){
 //							n = 19;
 //						}
-						perturb(*indiv, *hid[i], bestTeam->GeneSize);
+						subpop.Individuals[n] = perturb(indiv, *hid[i], bestTeam->GeneSize);
 					}
 				}
 			}
