@@ -87,7 +87,7 @@ bool operator<(Neuron n1, Neuron n2){
 	return (n1.Fitness / div1) < (n2.Fitness / div2);
 }
 
-void sortNeurons(Population p){
+Population sortNeurons(Population p){
 //	std::sort(p.Individuals, p.Individuals + p.numIndividuals);//is not working
 	for(int i = 0;i<p.numIndividuals;i++){
 		for(int j = 0;j<p.numIndividuals;j++){
@@ -99,6 +99,7 @@ void sortNeurons(Population p){
 		}
 
 	}
+	return p;
 
 }
 
@@ -124,7 +125,7 @@ void onePointCrossover(Neuron* parent1, Neuron* parent2, Neuron* child1, Neuron*
 	}
 }
 
-void mate(Population p){
+Population mate(Population p){
 	srand(time(0));
 	int mate;
 	for(int i=0;i<p.NumToBreed;i++){
@@ -137,9 +138,10 @@ void mate(Population p){
 		int childIndex2 = p.numIndividuals - (2 + (i *2));
 		onePointCrossover(p.Individuals[i], p.Individuals[mate], p.Individuals[childIndex1], p.Individuals[childIndex2]);
 	}
+	return p;
 }
 
-void mutate(Population p, double m){
+Population mutate(Population p, double m){
 	srand(time(0));
 	for(int i=p.NumToBreed;i<p.numIndividuals;i++){
 		if(((double)rand()) < m){
@@ -147,6 +149,7 @@ void mutate(Population p, double m){
 			p.Individuals[i]->Weight[mutationIndex] = p.Individuals[i]->Weight[mutationIndex] + CauchyRand(0.3);
 		}
 	}
+	return p;
 }
 
 void growIndividuals(Population p){
