@@ -113,7 +113,7 @@ feedForward* evaluate(PredatorPrey e, feedForward* team, int numTeams){
 		double* output = new double[outlen];
 		State state;
 
-		setPreyPosition(e, *PreyPositions[l], *PreyPositions[l]);
+		setPreyPosition(e, PreyPositions[0][l], PreyPositions[1][l]);
 		State* statepntr = getState(e);
 		Gridworld* worldpntr = getWorld(e);
 		state = *statepntr;
@@ -151,13 +151,16 @@ feedForward* evaluate(PredatorPrey e, feedForward* team, int numTeams){
 			State* ts = getState(e);
 			state = *ts;
 			steps++;
-/*
+//			delete[] input;
+//			delete[] output;
+///*
 			//output state
 			for(int pred = 0;pred < numPreds;pred++){
 				printf("Predator %d, %d\n", state.PredatorX[pred], state.PredatorY[pred]);
 			}
 			printf("prey %d, %d \n", state.PreyX, state.PreyY);
-*/
+//*/
+
 		}
 
 		if(Caught(e)){
@@ -246,7 +249,7 @@ int main(int argc, char **argv)
 		Population* subpops = init(hidden, numIndivs, ff->GeneSize);
 		predSubPops[p] = subpops;
 	}
-
+	bool teamfound = false;
 	int numTrials = 10 * numIndivs;
 	feedForward* team = new feedForward[numPreds];
 	while(generations < maxGens && catches < numTrials){
@@ -346,10 +349,10 @@ int main(int argc, char **argv)
 		if(!stagnated){
 			for(int i = 0 ;i<numPreds;i++){
 				for(int j = 0;j<hidden;j++){
-					Population p = predSubPops[i][j];
-					sortNeurons(predSubPops[i][j]);
-					mate(predSubPops[i][j]);
-					mutate(predSubPops[i][j], mutationRate);
+//					Population p = predSubPops[i][j];
+					predSubPops[i][j] = sortNeurons(predSubPops[i][j]);
+					predSubPops[i][j] = mate(predSubPops[i][j]);
+					predSubPops[i][j] = mutate(predSubPops[i][j], mutationRate);
 				}
 			}
 		}
