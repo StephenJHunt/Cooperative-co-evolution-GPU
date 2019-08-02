@@ -206,7 +206,33 @@ feedForward* evaluate(PredatorPrey e, feedForward* team, int numTeams){
 
 }
 
+__global__ void runEvaluationsParallel(){
 
+}
+
+__device__ feedForward* createTeams(feedForward* team){
+
+
+	return team;
+}
+
+__device__ int kernelCalculateFitnessDist(State state){
+
+	return 0;
+}
+
+__device__ void kernelAssignFitness(feedForward team){
+
+}
+
+__device__ void kernelOneMovement(State state, feedForward team, double* output){
+
+}
+
+__device__ feedForward* kernelEvaluate(PredatorPrey e, feedForward* team, int numTeams){
+
+	return team;
+}
 int main(int argc, char **argv)
 {
 //	runTests();
@@ -252,7 +278,7 @@ int main(int argc, char **argv)
 	bool teamfound = false;
 	int numTrials = 10 * numIndivs;
 	feedForward* team = new feedForward[numPreds];
-	while(generations < maxGens && catches < numTrials){
+	while(generations < maxGens && catches < numTrials){//run contents of this loop in parallel
 		catches = 0;
 
 		for(int x = 0; x < numTrials;x++){

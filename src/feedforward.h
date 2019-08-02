@@ -81,6 +81,10 @@ void Create(feedForward f, Population* p, int numPops){
 	}
 }
 
+__device__ void kernelCreate(feedForward f, Population* p, int numPops){
+
+}
+
 int getTotalInputs(feedForward f){
 	if(f.bias){
 		return f.NumInputs +1;
