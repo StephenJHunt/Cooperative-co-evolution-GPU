@@ -211,8 +211,11 @@ __global__ void runEvaluationsParallel(){
 }
 
 __device__ feedForward* createTeams(feedForward* team){
+	int idx = threadIdx.x + blockIdx.x * blockDim.x;
 
-
+	feedForward* ff = newFeedForward(numInputs, hidden, numOutputs, false);
+	Create(*ff, predSubPops[idx], hidden);
+	team[idx] = *ff;
 	return team;
 }
 
@@ -235,10 +238,7 @@ __device__ feedForward* kernelEvaluate(PredatorPrey e, feedForward* team, int nu
 }
 int main(int argc, char **argv)
 {
-//	runTests();
-//	printf("\n\nExecution\n\n");
-
-
+	//testing values
 	numInputs = 2;
 	hidden = 150;
 	numOutputs = 5;
@@ -249,40 +249,33 @@ int main(int argc, char **argv)
 	burstGens = 2;
 
 
-	//parse input
+	//TODO: parse input
 
+	//simulation values
 	bool stagnated;
 	double mutationRate = 0.4;
-//	printf("Number of inputs is %d\n", numInputs);
-//	printf("Number of hidden units is %d\n", hidden);
-//	printf("Number of outputs is %d\n", numOutputs);
-//	printf("Number of individuals per population is %d\n", numIndivs);
-//	printf("Max number of generations is %d\n", maxGens);
-//	printf("Mutation rate is %f\n", mutationRate);
-//	printf("Burst mutate after %d generations\n", burstGens);
-//	printf("Number of predators is %d\n", numPreds);
-//  printf("Number of team trials per evaluation is %d\n", trialsPerEval);
-
-//	int* performanceQueue = new int[burstGens];
 	int bestFitness = 0;
 	int generations = 0;
 	stagnated = false;
+	bool teamfound = false;
+	int numTrials = 10 * numIndivs;
 
 	predSubPops = new Population*[numPreds];
-	//initialisation
+	//initialisation of subpopulations
 	for(int p = 0;p<numPreds;p++){
 		feedForward* ff = newFeedForward(numInputs, hidden, numOutputs, false);
 		Population* subpops = init(hidden, numIndivs, ff->GeneSize);
 		predSubPops[p] = subpops;
 	}
-	bool teamfound = false;
-	int numTrials = 10 * numIndivs;
+
 	feedForward* team = new feedForward[numPreds];
+	//run simulation
 	while(generations < maxGens && catches < numTrials){//run contents of this loop in parallel
 		catches = 0;
 
 		for(int x = 0; x < numTrials;x++){
 
+			//initialise teams
 			for(int f = 0;f<numPreds;f++){
 				feedForward* ff = newFeedForward(numInputs, hidden, numOutputs, false);
 				Create(*ff, predSubPops[f], hidden);
@@ -291,13 +284,18 @@ int main(int argc, char **argv)
 			PredatorPrey* pp = newPredatorPrey(numPreds);
 			reset(*pp, numPreds);
 
+			//evaluate teams
 			feedForward* t = evaluate(*pp, team, numPreds);
+			//assign team scores
 			catches = catches + getCatches(t[0]);
 			if(bestFitness == 0 && !teamfound){
 				bestFitness = getFitness(t[0]);
 			}
+
 			printf("best fitness %d\n", bestFitness);
 //			printf("this team fitness: %d\n", getFitness(t[0]));
+
+			//keep track of the best performing team
 			if(getFitness(t[0]) > bestFitness){
 				bestFitness = getFitness(t[0]);
 				double* bestActivation = new double[t->numHidden];
@@ -325,6 +323,7 @@ int main(int argc, char **argv)
 					Tag(bestTeam[i]);
 				}
 			}
+			//if this is the first run, take the team as the baseline best team
 			if(!teamfound){
 				teamfound = true;
 				double* bestActivation = new double[t->numHidden];
@@ -353,6 +352,7 @@ int main(int argc, char **argv)
 
 		printf("Generation %d, best fitness is %d, catches is %d\n", generations, bestFitness, catches);
 
+		//check for stagnation and burst mutate if stagnated
 		if(generations%burstGens == 0 && generations != 0){
 			//burst mutate
 			stagnated = true;
@@ -372,10 +372,10 @@ int main(int argc, char **argv)
 				}
 			}
 		}
+		//sort by fitness, mate upper part and mutate populations if not stagnated
 		if(!stagnated){
 			for(int i = 0 ;i<numPreds;i++){
 				for(int j = 0;j<hidden;j++){
-//					Population p = predSubPops[i][j];
 					predSubPops[i][j] = sortNeurons(predSubPops[i][j]);
 					predSubPops[i][j] = mate(predSubPops[i][j]);
 					predSubPops[i][j] = mutate(predSubPops[i][j], mutationRate);
@@ -383,15 +383,7 @@ int main(int argc, char **argv)
 			}
 		}
 		stagnated = false;
-		//reset teams?? doens't seem to do anything
 		generations++;
 	}
-//	char* test = "hello";//this is a string now
-	//printf(test);
-	//printf("\n");
-    //printf("Hello World!\n");
-    //CUDAHello<<<1,10>>>();
-//    cudaDeviceReset();
-    //
 }
 
