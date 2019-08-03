@@ -45,6 +45,7 @@ feedForward* newFeedForward(int in, int hid, int out, bool bias){
 		genesize++;
 	}
 	double* actArr = new double[hid];
+//	std::vector<double> actArr;
 	Neuron** neuArr = new Neuron*[hid];
 	feedForward* ff = new feedForward{counter, actArr, neuArr, in, out, bias, 0, 0, 0, -1, -1, "Feed Forward", genesize, hid};
 	return ff;

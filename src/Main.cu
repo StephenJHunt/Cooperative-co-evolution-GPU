@@ -94,9 +94,26 @@ int calculateDistance(int predX, int predY, int preyX ,int preyY){
 	return int(xDist + yDist);
 }
 
+__global__ void kernelAssignFitness(int fitness, int numHidden, Neuron** hiddenUnits){
+	int index = threadIdx.x + blockIdx.x * blockDim.x;
+
+    for(int i=index;i<numHidden;i++){
+		Neuron* n = hiddenUnits[i];
+		n->Fitness = fitness;
+		n->Trials++;
+		hiddenUnits[i] = n;
+    }
+}
+
 feedForward* evaluate(PredatorPrey e, feedForward* team, int numTeams){
 	catches = 0;
 	int total_fitness = 0;
+	int SMs;
+	int deviceID;
+	cudaGetDevice(&deviceID);
+	cudaDeviceGetAttribute(&SMs, cudaDevAttrMultiProcessorCount, deviceID);
+	int threadsPerBlock = 256;
+	int blocks = 32 * SMs;
 
 	int PreyPositions[2][9] = {{16, 50, 82, 82, 82, 16, 50, 50, 82},{50, 50, 50, 82, 16, 50, 16, 82, 50}};
 
@@ -171,14 +188,11 @@ feedForward* evaluate(PredatorPrey e, feedForward* team, int numTeams){
 		}
 
 		for(int p = 0; p < numPreds;p++){
-//			printf("Predator %d distance: %d\n", p, calculateDistance(state.PredatorX[p], state.PredatorY[p], state.PreyX, state.PreyY));
 			avg_final_dist = avg_final_dist + calculateDistance(state.PredatorX[p], state.PredatorY[p], state.PreyX, state.PreyY);
-//			printf("avg final dist: %d\n", avg_final_dist);
 		}
 		avg_final_dist = avg_final_dist/numPreds;
 
 		if(!Caught(e)){
-//			printf("fitness eval: avg init:%d, avg final:%d, result:%d\n", avg_init_dist, avg_final_dist, ((avg_init_dist - avg_final_dist)));
 			fitness = (avg_init_dist - avg_final_dist);// /10
 		}else{
 			fitness = (200 - avg_final_dist)/10;
@@ -188,20 +202,17 @@ feedForward* evaluate(PredatorPrey e, feedForward* team, int numTeams){
 	}
 
 	for(int pred = 0; pred < numTeams;pred++){
-//		feedForward currFF  = team[pred];
-		team[pred].Fitness = (total_fitness); ///trialsPerEval
+		team[pred].Fitness = (total_fitness); // /trialsPerEval
 		team[pred].Catches = catches;
-		for(int i = 0; i<team[pred].numHidden;i++){
-			Neuron* n = team[pred].HiddenUnits[i];
-			n->Fitness = team[pred].Fitness;
-			n->Trials++;
-			team[pred].HiddenUnits[i] = n;
-		}
-//		setFitness(currFF, (total_fitness/trialsPerEval));
-//		setCatches(currFF, catches);
-//		setNeuronFitness(currFF);
+
+		kernelAssignFitness<<<blocks, threadsPerBlock>>>(total_fitness, team[pred].numHidden, team[pred].HiddenUnits);
+//		for(int i = 0; i<team[pred].numHidden;i++){
+//			Neuron* n = team[pred].HiddenUnits[i];
+//			n->Fitness = team[pred].Fitness;
+//			n->Trials++;
+//			team[pred].HiddenUnits[i] = n;
+//		}
 	}
-//	printf("fitness before return %d\n", total_fitness);
 	return team;
 
 }
@@ -210,23 +221,7 @@ __global__ void runEvaluationsParallel(){
 
 }
 
-__device__ feedForward* createTeams(feedForward* team){
-	int idx = threadIdx.x + blockIdx.x * blockDim.x;
 
-	feedForward* ff = newFeedForward(numInputs, hidden, numOutputs, false);
-	Create(*ff, predSubPops[idx], hidden);
-	team[idx] = *ff;
-	return team;
-}
-
-__device__ int kernelCalculateFitnessDist(State state){
-
-	return 0;
-}
-
-__device__ void kernelAssignFitness(feedForward team){
-
-}
 
 __device__ void kernelOneMovement(State state, feedForward team, double* output){
 
@@ -240,9 +235,9 @@ int main(int argc, char **argv)
 {
 	//testing values
 	numInputs = 2;
-	hidden = 150;
+	hidden = 15;
 	numOutputs = 5;
-	numIndivs = 540;//540
+	numIndivs = 100;//540
 	maxGens = 100;
 	goalFitness = 100;
 	numPreds = 3;//6
@@ -259,6 +254,14 @@ int main(int argc, char **argv)
 	stagnated = false;
 	bool teamfound = false;
 	int numTrials = 10 * numIndivs;
+
+	//GPU values
+	int SMs;
+	int deviceID;
+	cudaGetDevice(&deviceID);
+	cudaDeviceGetAttribute(&SMs, cudaDevAttrMultiProcessorCount, deviceID);
+	int threadsPerBlock = 256;
+	int blocks = 32 * SMs;
 
 	predSubPops = new Population*[numPreds];
 	//initialisation of subpopulations
@@ -305,22 +308,22 @@ int main(int argc, char **argv)
 					bestNeurons[i] = t->HiddenUnits[i];
 				}
 				bestTeam = new feedForward;
-				bestTeam->ID = t->ID;
-				bestTeam->Catches = t->Catches;
-				bestTeam->Fitness = t->Fitness;
-				bestTeam->GeneSize = t->GeneSize;
-				bestTeam->NumInputs = t->NumInputs;
-				bestTeam->NumOutputs = t->NumOutputs;
-				bestTeam->Parent1 = t->Parent1;
-				bestTeam->Parent2 = t->Parent2;
-				bestTeam->Trials = t->Trials;
-				bestTeam->bias = t->bias;
-				bestTeam->name = t->name;
-				bestTeam->numHidden = t->numHidden;
-				bestTeam->Activation=bestActivation;
-				bestTeam->HiddenUnits = bestNeurons;
+				bestTeam[0].ID = t[0].ID;
+				bestTeam[0].Catches = t[0].Catches;
+				bestTeam[0].Fitness = t[0].Fitness;
+				bestTeam[0].GeneSize = t[0].GeneSize;
+				bestTeam[0].NumInputs = t[0].NumInputs;
+				bestTeam[0].NumOutputs = t[0].NumOutputs;
+				bestTeam[0].Parent1 = t[0].Parent1;
+				bestTeam[0].Parent2 = t[0].Parent2;
+				bestTeam[0].Trials = t[0].Trials;
+				bestTeam[0].bias = t[0].bias;
+				bestTeam[0].name = t[0].name;
+				bestTeam[0].numHidden = t[0].numHidden;
+				bestTeam[0].Activation=bestActivation;
+				bestTeam[0].HiddenUnits = bestNeurons;
 				for(int i = 0;i<numPreds;i++){
-					Tag(bestTeam[i]);
+					Tag(bestTeam[0]);
 				}
 			}
 			//if this is the first run, take the team as the baseline best team
@@ -333,20 +336,20 @@ int main(int argc, char **argv)
 					bestNeurons[i] = t->HiddenUnits[i];
 				}
 				bestTeam = new feedForward;
-				bestTeam->ID = t->ID;
-				bestTeam->Catches = t->Catches;
-				bestTeam->Fitness = t->Fitness;
-				bestTeam->GeneSize = t->GeneSize;
-				bestTeam->NumInputs = t->NumInputs;
-				bestTeam->NumOutputs = t->NumOutputs;
-				bestTeam->Parent1 = t->Parent1;
-				bestTeam->Parent2 = t->Parent2;
-				bestTeam->Trials = t->Trials;
-				bestTeam->bias = t->bias;
-				bestTeam->name = t->name;
-				bestTeam->numHidden = t->numHidden;
-				bestTeam->Activation=bestActivation;
-				bestTeam->HiddenUnits = bestNeurons;
+				bestTeam[0].ID = t[0].ID;
+				bestTeam[0].Catches = t[0].Catches;
+				bestTeam[0].Fitness = t[0].Fitness;
+				bestTeam[0].GeneSize = t[0].GeneSize;
+				bestTeam[0].NumInputs = t[0].NumInputs;
+				bestTeam[0].NumOutputs = t[0].NumOutputs;
+				bestTeam[0].Parent1 = t[0].Parent1;
+				bestTeam[0].Parent2 = t[0].Parent2;
+				bestTeam[0].Trials = t[0].Trials;
+				bestTeam[0].bias = t[0].bias;
+				bestTeam[0].name = t[0].name;
+				bestTeam[0].numHidden = t[0].numHidden;
+				bestTeam[0].Activation=bestActivation;
+				bestTeam[0].HiddenUnits = bestNeurons;
 			}
 		}
 
