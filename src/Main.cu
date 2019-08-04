@@ -94,15 +94,19 @@ int calculateDistance(int predX, int predY, int preyX ,int preyY){
 	return int(xDist + yDist);
 }
 
-__global__ void kernelAssignFitness(int fitness, int numHidden, Neuron** hiddenUnits){
+__global__ void kernelAssignFitness(int fitness, Neuron** hiddenUnits){
 	int index = threadIdx.x + blockIdx.x * blockDim.x;
 
-    for(int i=index;i<numHidden;i++){
-		Neuron* n = hiddenUnits[i];
-		n->Fitness = fitness;
-		n->Trials++;
-		hiddenUnits[i] = n;
-    }
+//    for(int i=index;i<numHidden;i++){
+//		Neuron* n = hiddenUnits[i];
+		hiddenUnits[index]->Fitness = fitness;
+		hiddenUnits[index]->Trials++;
+//		hiddenUnits[i] = n;
+//    }
+}
+
+__global__ void kernelOneMovement(State state, feedForward team, double* output){
+
 }
 
 feedForward* evaluate(PredatorPrey e, feedForward* team, int numTeams){
@@ -145,7 +149,7 @@ feedForward* evaluate(PredatorPrey e, feedForward* team, int numTeams){
 		}
 		avg_init_dist = avg_init_dist/numPreds;
 
-		while(!Caught(e) && steps < maxSteps){
+		while(!Caught(e) && steps < maxSteps){//paralellise so that always runs maxSteps?
 			for(int p=0; p < numPreds;p++){
 				currentDist = calculateDistance(state.PredatorX[p], state.PredatorY[p], state.PreyX, state.PreyY);
 				if(currentDist<nearestDist){
@@ -205,13 +209,18 @@ feedForward* evaluate(PredatorPrey e, feedForward* team, int numTeams){
 		team[pred].Fitness = (total_fitness); // /trialsPerEval
 		team[pred].Catches = catches;
 
-		kernelAssignFitness<<<blocks, threadsPerBlock>>>(total_fitness, team[pred].numHidden, team[pred].HiddenUnits);
-//		for(int i = 0; i<team[pred].numHidden;i++){
-//			Neuron* n = team[pred].HiddenUnits[i];
-//			n->Fitness = team[pred].Fitness;
-//			n->Trials++;
-//			team[pred].HiddenUnits[i] = n;
-//		}
+		// <<<blocks, threadsPerBlock>>>
+//		int numBytes = team[pred].numHidden * sizeof(team[pred].HiddenUnits[0]);
+//		cudaMallocManaged(&team[pred].HiddenUnits, numBytes);
+//		kernelAssignFitness<<<1, team[pred].numHidden>>>(total_fitness, team[pred].HiddenUnits);
+//		cudaDeviceSynchronize();
+//		cudaMemcpy(team[pred].HiddenUnits, );
+		for(int i = 0; i<team[pred].numHidden;i++){
+			Neuron* n = team[pred].HiddenUnits[i];
+			n->Fitness = team[pred].Fitness;
+			n->Trials++;
+			team[pred].HiddenUnits[i] = n;
+		}
 	}
 	return team;
 
@@ -223,9 +232,7 @@ __global__ void runEvaluationsParallel(){
 
 
 
-__device__ void kernelOneMovement(State state, feedForward team, double* output){
 
-}
 
 __device__ feedForward* kernelEvaluate(PredatorPrey e, feedForward* team, int numTeams){
 
