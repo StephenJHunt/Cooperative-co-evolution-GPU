@@ -128,6 +128,7 @@ feedForward* evaluate(PredatorPrey e, feedForward* team, int numTeams){
 		int avg_init_dist = 0;
 		int avg_final_dist = 0;
 
+		//do these before with cudaMallocManaged
 		int inplen = getTotalInputs(team[0]);
 		int outlen = getTotalOutputs(team[0]);
 		double* input = new double[inplen];
@@ -208,10 +209,16 @@ feedForward* evaluate(PredatorPrey e, feedForward* team, int numTeams){
 	for(int pred = 0; pred < numTeams;pred++){
 		team[pred].Fitness = (total_fitness); // /trialsPerEval
 		team[pred].Catches = catches;
-
+		Neuron** d_neurons;
 		// <<<blocks, threadsPerBlock>>>
-//		int numBytes = team[pred].numHidden * sizeof(team[pred].HiddenUnits[0]);
-//		cudaMallocManaged(&team[pred].HiddenUnits, numBytes);
+		int numBytes = team[pred].numHidden * sizeof(team[pred].HiddenUnits[0]);
+		//case 1
+//		cudaMalloc(&d_neurons, numBytes);//optimise to only take neuron fitness and trials not whole struct
+//		cudaMemcpy(team[pred].HiddenUnits, d_neurons, numBytes, cudaMemcpyHostToDevice);
+//		kernelAssignFitness<<<1, team[pred].numHidden>>>(total_fitness, d_neurons);
+//		cudaDeviceSynchronize();
+//		cudaMemcpy(team[pred].HiddenUnits, d_neurons, numBytes, cudaMemcpyDeviceToHost);
+		//case 2
 		kernelAssignFitness<<<1, team[pred].numHidden>>>(total_fitness, team[pred].HiddenUnits);
 		cudaDeviceSynchronize();
 		for(int i = 0; i<team[pred].numHidden;i++){
@@ -225,8 +232,75 @@ feedForward* evaluate(PredatorPrey e, feedForward* team, int numTeams){
 
 }
 
-__global__ void runEvaluationsParallel(PredatorPrey e, feedForward* team, int numTeams){
+__global__ void runEvaluationsParallel(PredatorPrey e, feedForward* team, int numTeams, double* input, double* output){
+	int catches = 0;
+	int total_fitness = 0;
 
+	int PreyPositions[2][9] = {{16, 50, 82, 82, 82, 16, 50, 50, 82},{50, 50, 50, 82, 16, 50, 16, 82, 50}};
+
+	for(int l = 0;l < trialsPerEval;l++){//parallel?
+		int fitness =0;
+		int steps = 0;
+		int maxSteps = 150;
+		int avg_init_dist = 0;
+		int avg_final_dist = 0;
+
+		//do these before with cudaMallocManaged
+//		int inplen = getTotalInputs(team[0]);
+//		int outlen = getTotalOutputs(team[0]);
+//		double* input = new double[inplen];
+//		double* output = new double[outlen];
+		State state;
+
+		setPreyPosition(e, PreyPositions[0][l], PreyPositions[1][l]);
+		State* statepntr = e.state;
+		Gridworld* worldpntr = e.world;
+		state = *statepntr;
+		world = *worldpntr;
+
+		int nearestDist = 0;
+		int nearestPred = 0;
+		int currentDist = 0;
+
+		for(int p = 0 ; p < numPreds; p++){
+			avg_init_dist = avg_init_dist + calculateDistance(state.PredatorX[p], state.PredatorY[p], state.PreyX, state.PreyY);
+		}
+		avg_init_dist = avg_init_dist/numPreds;
+
+		while(!Caught(e) && steps < maxSteps){//paralellise so that always runs maxSteps?
+			for(int p=0; p < numPreds;p++){
+				currentDist = calculateDistance(state.PredatorX[p], state.PredatorY[p], state.PreyX, state.PreyY);
+				if(currentDist<nearestDist){
+					nearestDist = currentDist;
+					nearestPred = p;
+				}
+			}
+
+			PerformPreyAction(e, nearestPred);
+
+			for(int pred = 0; pred < numTeams;pred++){
+				input[0] = double(e.state->PreyX);
+				input[1] = double(e.state->PreyY);
+				delete[] output;
+				output = new double[outlen];//reset output in between?
+				double* out = Activate(team[pred], input, inplen, output);
+				PerformPredatorAction(e, pred, out, team[pred].NumOutputs);
+//				printf("\n");
+			}
+			State* ts = getState(e);
+			state = *ts;
+			steps++;
+//			delete[] input;
+//			delete[] output;
+///*
+			//output state
+			for(int pred = 0;pred < numPreds;pred++){
+				printf("Predator %d, %d\n", state.PredatorX[pred], state.PredatorY[pred]);
+			}
+			printf("prey %d, %d \n", state.PreyX, state.PreyY);
+//*/
+
+		}
 }
 
 int main(int argc, char **argv)
@@ -269,7 +343,10 @@ int main(int argc, char **argv)
 		predSubPops[p] = subpops;
 	}
 
-	feedForward* team = new feedForward[numPreds];
+	feedForward* team;
+	int numBytes = numPreds * sizeof(feedForward);
+	cudaMallocManaged(&team, numBytes);
+//	team = new feedForward[numPreds];
 	//run simulation
 	while(generations < maxGens && catches < numTrials){//run contents of this loop in parallel
 		catches = 0;
@@ -284,6 +361,14 @@ int main(int argc, char **argv)
 			}
 			PredatorPrey* pp = newPredatorPrey(numPreds);
 			reset(*pp, numPreds);
+
+			//setup for kernel evaluation
+			int inplen = getTotalInputs(team[0]);
+			int outlen = getTotalOutputs(team[0]);
+			double* input;
+			cudaMallocManaged(&input, inplen * sizeof(double));
+			double* output;
+			cudaMallocManaged(&output, outlen * sizeof(double));
 
 			//evaluate teams
 			feedForward* t = evaluate(*pp, team, numPreds);
