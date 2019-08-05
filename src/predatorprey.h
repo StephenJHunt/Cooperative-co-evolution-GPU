@@ -38,11 +38,11 @@ void reset(PredatorPrey pp, int n){
 	pp.state->Caught = false;
 }
 
-__device__ void kernelReset(PredatorPrey pp, int n){
+//__device__ void kernelReset(PredatorPrey pp, int n){
+//
+//}
 
-}
-
-void setPreyPosition(PredatorPrey pp,int x, int y){
+__device__ void setPreyPosition(PredatorPrey pp,int x, int y){
 	pp.state->PreyX = x;
 	pp.state->PreyY = y;
 }
