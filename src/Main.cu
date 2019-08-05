@@ -105,7 +105,7 @@ __global__ void kernelAssignFitness(int fitness, Neuron** hiddenUnits){
 //    }
 }
 
-__global__ void kernelOneMovement(State state, feedForward team, double* output){
+__global__ void kernelOnePreyMovement(PredatorPrey pp, int nearest){
 
 }
 
@@ -121,7 +121,7 @@ feedForward* evaluate(PredatorPrey e, feedForward* team, int numTeams){
 
 	int PreyPositions[2][9] = {{16, 50, 82, 82, 82, 16, 50, 50, 82},{50, 50, 50, 82, 16, 50, 16, 82, 50}};
 
-	for(int l = 0;l < trialsPerEval;l++){
+	for(int l = 0;l < trialsPerEval;l++){//parallel?
 		int fitness =0;
 		int steps = 0;
 		int maxSteps = 150;
@@ -212,9 +212,8 @@ feedForward* evaluate(PredatorPrey e, feedForward* team, int numTeams){
 		// <<<blocks, threadsPerBlock>>>
 //		int numBytes = team[pred].numHidden * sizeof(team[pred].HiddenUnits[0]);
 //		cudaMallocManaged(&team[pred].HiddenUnits, numBytes);
-//		kernelAssignFitness<<<1, team[pred].numHidden>>>(total_fitness, team[pred].HiddenUnits);
-//		cudaDeviceSynchronize();
-//		cudaMemcpy(team[pred].HiddenUnits, );
+		kernelAssignFitness<<<1, team[pred].numHidden>>>(total_fitness, team[pred].HiddenUnits);
+		cudaDeviceSynchronize();
 		for(int i = 0; i<team[pred].numHidden;i++){
 			Neuron* n = team[pred].HiddenUnits[i];
 			n->Fitness = team[pred].Fitness;
@@ -226,18 +225,10 @@ feedForward* evaluate(PredatorPrey e, feedForward* team, int numTeams){
 
 }
 
-__global__ void runEvaluationsParallel(){
+__global__ void runEvaluationsParallel(PredatorPrey e, feedForward* team, int numTeams){
 
 }
 
-
-
-
-
-__device__ feedForward* kernelEvaluate(PredatorPrey e, feedForward* team, int numTeams){
-
-	return team;
-}
 int main(int argc, char **argv)
 {
 	//testing values
@@ -329,6 +320,7 @@ int main(int argc, char **argv)
 				bestTeam[0].numHidden = t[0].numHidden;
 				bestTeam[0].Activation=bestActivation;
 				bestTeam[0].HiddenUnits = bestNeurons;
+				//tag best team neurons
 				for(int i = 0;i<numPreds;i++){
 					Tag(bestTeam[0]);
 				}
@@ -360,7 +352,7 @@ int main(int argc, char **argv)
 			}
 		}
 
-		printf("Generation %d, best fitness is %d, catches is %d\n", generations, bestFitness, catches);
+		printf("Generation %d, best fitness is %d, catches is %d\n", generations+1, bestFitness, catches);
 
 		//check for stagnation and burst mutate if stagnated
 		if(generations%burstGens == 0 && generations != 0){
