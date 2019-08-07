@@ -51,7 +51,7 @@ feedForward* newFeedForward(int in, int hid, int out, bool bias){
 	return ff;
 }
 
-double* Activate(feedForward f, double* input, int inputLen, double* output){
+__device__ double* Activate(feedForward f, double* input, int inputLen, double* output){
 	for(int key = 0; key< f.numHidden;key++){
 		Neuron* n = f.HiddenUnits[key];
 		if(!n->Lesioned){

@@ -78,18 +78,18 @@ Population* init(int hid, int num, int genes){
 	return pops;
 }
 
-int calculateDistance(int predX, int predY, int preyX ,int preyY){
+__device__ int calculateDistance(Gridworld* world, int predX, int predY, int preyX ,int preyY){
 	double xDist = 0;
 	double yDist = 0;
 
 	xDist = abs((double)(predX-preyX));
-	if(xDist > double(world.length/2)){
-		xDist = double(world.length) - xDist;
+	if(xDist > double(world->length/2)){
+		xDist = double(world->length) - xDist;
 	}
 
 	yDist = abs((double)(predY-preyY));
-	if(yDist > double(world.height/2)){
-		yDist = double(world.height) - yDist;
+	if(yDist > double(world->height/2)){
+		yDist = double(world->height) - yDist;
 	}
 	return int(xDist + yDist);
 }
@@ -108,7 +108,7 @@ __global__ void kernelAssignFitness(int fitness, Neuron** hiddenUnits){
 __global__ void kernelOnePreyMovement(PredatorPrey pp, int nearest){
 
 }
-
+/*
 feedForward* evaluate(PredatorPrey e, feedForward* team, int numTeams){
 	catches = 0;
 	int total_fitness = 0;
@@ -181,7 +181,7 @@ feedForward* evaluate(PredatorPrey e, feedForward* team, int numTeams){
 				printf("Predator %d, %d\n", state.PredatorX[pred], state.PredatorY[pred]);
 			}
 			printf("prey %d, %d \n", state.PreyX, state.PreyY);
-//*/
+//
 
 		}
 
@@ -231,76 +231,117 @@ feedForward* evaluate(PredatorPrey e, feedForward* team, int numTeams){
 	return team;
 
 }
+*/
 
-__global__ void runEvaluationsParallel(PredatorPrey e, feedForward* team, int numTeams, double* input, double* output){
-	int catches = 0;
-	int total_fitness = 0;
+__global__ void runEvaluationsParallel(PredatorPrey* e, feedForward** teams, int numPreds, double* input, double* output, int inplen, int outlen, int trialsPerEval, bool sim, int numTrials){
+	int index = threadIdx.x + blockIdx.x * blockDim.x;
+	int stride = blockDim.x * gridDim.x;
 
-	int PreyPositions[2][9] = {{16, 50, 82, 82, 82, 16, 50, 50, 82},{50, 50, 50, 82, 16, 50, 16, 82, 50}};
+	for(int i = index;i < numTrials;i+= stride){
+		int catches = 0;
+		int total_fitness = 0;
 
-	for(int l = 0;l < trialsPerEval;l++){//parallel?
-		int fitness =0;
-		int steps = 0;
-		int maxSteps = 150;
-		int avg_init_dist = 0;
-		int avg_final_dist = 0;
+		int PreyPositions[2][9] = {{16, 50, 82, 82, 82, 16, 50, 50, 82},{50, 50, 50, 82, 16, 50, 16, 82, 50}};
 
-		//do these before with cudaMallocManaged
-//		int inplen = getTotalInputs(team[0]);
-//		int outlen = getTotalOutputs(team[0]);
-//		double* input = new double[inplen];
-//		double* output = new double[outlen];
-		State state;
+		for(int l = 0;l < trialsPerEval;l++){//parallel?
+			int fitness =0;
+			int steps = 0;
+			int maxSteps = 150;
+			int avg_init_dist = 0;
+			int avg_final_dist = 0;
 
-		setPreyPosition(e, PreyPositions[0][l], PreyPositions[1][l]);
-		State* statepntr = e.state;
-		Gridworld* worldpntr = e.world;
-		state = *statepntr;
-		world = *worldpntr;
+			//do these before with cudaMallocManaged
+	//		int inplen = getTotalInputs(team[0]);
+	//		int outlen = getTotalOutputs(team[0]);
+	//		double* input = new double[inplen];
+	//		double* output = new double[outlen];
+			State state;
+			Gridworld world;
 
-		int nearestDist = 0;
-		int nearestPred = 0;
-		int currentDist = 0;
+			setPreyPosition(*e, PreyPositions[0][l], PreyPositions[1][l]);
+			State* statepntr = e->state;
+			Gridworld* worldpntr = e->world;
+			state = *statepntr;
+			world = *worldpntr;
 
-		for(int p = 0 ; p < numPreds; p++){
-			avg_init_dist = avg_init_dist + calculateDistance(state.PredatorX[p], state.PredatorY[p], state.PreyX, state.PreyY);
-		}
-		avg_init_dist = avg_init_dist/numPreds;
+			int nearestDist = 0;
+			int nearestPred = 0;
+			int currentDist = 0;
 
-		while(!Caught(e) && steps < maxSteps){//paralellise so that always runs maxSteps?
-			for(int p=0; p < numPreds;p++){
-				currentDist = calculateDistance(state.PredatorX[p], state.PredatorY[p], state.PreyX, state.PreyY);
-				if(currentDist<nearestDist){
-					nearestDist = currentDist;
-					nearestPred = p;
+			for(int p = 0 ; p < numPreds; p++){
+				avg_init_dist = avg_init_dist + calculateDistance(worldpntr, state.PredatorX[p], state.PredatorY[p], state.PreyX, state.PreyY);
+			}
+			avg_init_dist = avg_init_dist/numPreds;
+
+			while(!Caught(*e) && steps < maxSteps){//paralellise so that always runs maxSteps?
+				for(int p=0; p < numPreds;p++){
+					currentDist = calculateDistance(worldpntr, state.PredatorX[p], state.PredatorY[p], state.PreyX, state.PreyY);
+					if(currentDist<nearestDist){
+						nearestDist = currentDist;
+						nearestPred = p;
+					}
+				}
+
+				PerformPreyAction(*e, nearestPred);
+
+				for(int pred = 0; pred < numPreds;pred++){
+					input[0] = double(e->state->PreyX);
+					input[1] = double(e->state->PreyY);
+					delete[] output;
+					output = new double[outlen];
+					double* out = Activate(teams[i][pred], input, inplen, output);
+					PerformPredatorAction(*e, pred, out, teams[i][pred].NumOutputs);
+				}
+				State* ts = e->state;
+				state = *ts;
+				steps++;
+			}
+			if(Caught(*e)){
+				if(sim == true){
+					printf("Simulation Complete\n");
+					printf("Predator at position %d, %d caught the prey at position %d, %d after %d steps", state.PredatorX[nearestPred], state.PredatorY[nearestPred], state.PreyX, state.PreyY, steps);
 				}
 			}
 
-			PerformPreyAction(e, nearestPred);
-
-			for(int pred = 0; pred < numTeams;pred++){
-				input[0] = double(e.state->PreyX);
-				input[1] = double(e.state->PreyY);
-				delete[] output;
-				output = new double[outlen];//reset output in between?
-				double* out = Activate(team[pred], input, inplen, output);
-				PerformPredatorAction(e, pred, out, team[pred].NumOutputs);
-//				printf("\n");
+			for(int p = 0; p < numPreds;p++){
+				avg_final_dist = avg_final_dist + calculateDistance(worldpntr, state.PredatorX[p], state.PredatorY[p], state.PreyX, state.PreyY);
 			}
-			State* ts = getState(e);
-			state = *ts;
-			steps++;
-//			delete[] input;
-//			delete[] output;
-///*
-			//output state
-			for(int pred = 0;pred < numPreds;pred++){
-				printf("Predator %d, %d\n", state.PredatorX[pred], state.PredatorY[pred]);
-			}
-			printf("prey %d, %d \n", state.PreyX, state.PreyY);
-//*/
+			avg_final_dist = avg_final_dist/numPreds;
 
+			if(!Caught(*e)){
+				fitness = (avg_init_dist - avg_final_dist);// /10
+			}else{
+				fitness = (200 - avg_final_dist)/10;
+				catches++;
+			}
+			total_fitness = total_fitness + fitness;
 		}
+
+		for(int pred = 0; pred < numPreds;pred++){
+			teams[i][pred].Fitness = (total_fitness); // /trialsPerEval
+			teams[i][pred].Catches = catches;
+			Neuron** d_neurons;
+			// <<<blocks, threadsPerBlock>>>
+			int numBytes = teams[i][pred].numHidden * sizeof(teams[i][pred].HiddenUnits[0]);
+			//case 1
+	//		cudaMalloc(&d_neurons, numBytes);//optimise to only take neuron fitness and trials not whole struct
+	//		cudaMemcpy(team[pred].HiddenUnits, d_neurons, numBytes, cudaMemcpyHostToDevice);
+	//		kernelAssignFitness<<<1, team[pred].numHidden>>>(total_fitness, d_neurons);
+	//		cudaDeviceSynchronize();
+	//		cudaMemcpy(team[pred].HiddenUnits, d_neurons, numBytes, cudaMemcpyDeviceToHost);
+			//case 2
+	//		kernelAssignFitness<<<1, team[pred].numHidden>>>(total_fitness, team[pred].HiddenUnits);
+	//		cudaDeviceSynchronize();
+			for(int i = 0; i<teams[i][pred].numHidden;i++){
+				Neuron* n = teams[i][pred].HiddenUnits[i];
+				n->Fitness = teams[i][pred].Fitness;
+				n->Trials++;
+				teams[i][pred].HiddenUnits[i] = n;
+			}
+		}
+	}
+
+//	return team;
 }
 
 int main(int argc, char **argv)
@@ -343,66 +384,86 @@ int main(int argc, char **argv)
 		predSubPops[p] = subpops;
 	}
 
-	feedForward* team;
-	int numBytes = numPreds * sizeof(feedForward);
-	cudaMallocManaged(&team, numBytes);
+	feedForward** teams;
+	feedForward** d_teams;
+	int numBytes = numTrials * (numPreds * sizeof(feedForward));
+//	cudaMallocManaged(&teams, numBytes);
+	cudaMalloc(&d_teams, numBytes);
+//	for (int t =0;t < numTrials;t++){
+//		feedForward* team;
+//		numBytes = numPreds * sizeof(feedForward);
+//		cudaMallocManaged(&team, numBytes);
+//		teams[t] = team;
+//	}
+	cudaMemcpy(teams, d_teams, numBytes, cudaMemcpyHostToDevice);
 //	team = new feedForward[numPreds];
 	//run simulation
 	while(generations < maxGens && catches < numTrials){//run contents of this loop in parallel
 		catches = 0;
 
-		for(int x = 0; x < numTrials;x++){
+		for(int t = 0; t < numTrials;t++){
 
 			//initialise teams
-			for(int f = 0;f<numPreds;f++){
+			for(int p = 0;p<numPreds;p++){
 				feedForward* ff = newFeedForward(numInputs, hidden, numOutputs, false);
-				Create(*ff, predSubPops[f], hidden);
-				team[f] = *ff;
+				Create(*ff, predSubPops[p], hidden);
+				teams[t][p] = *ff;
 			}
-			PredatorPrey* pp = newPredatorPrey(numPreds);
-			reset(*pp, numPreds);
+		}
+		PredatorPrey* h_pp;
+		PredatorPrey* d_pp;
+//		cudaMallocManaged(&pp, sizeof(PredatorPrey));
+		cudaMalloc(&d_pp, sizeof(PredatorPrey));
+		h_pp = newPredatorPrey(numPreds);
+		reset(h_pp, numPreds);
+		cudaMemcpy(h_pp, d_pp, sizeof(PredatorPrey), cudaMemcpyHostToDevice);
+		//setup for kernel evaluation
+		int inplen = getTotalInputs(teams[0][0]);
+		int outlen = getTotalOutputs(teams[0][0]);
+		double* input;
+		cudaMallocManaged(&input, inplen * sizeof(double));
+		double* output;
+		cudaMallocManaged(&output, outlen * sizeof(double));
 
-			//setup for kernel evaluation
-			int inplen = getTotalInputs(team[0]);
-			int outlen = getTotalOutputs(team[0]);
-			double* input;
-			cudaMallocManaged(&input, inplen * sizeof(double));
-			double* output;
-			cudaMallocManaged(&output, outlen * sizeof(double));
+		//evaluate teams
+		runEvaluationsParallel<<<blocks, threadsPerBlock>>>(d_pp, d_teams, numPreds, input, output, inplen, outlen, trialsPerEval, sim, numTrials);
+//			feedForward* t = evaluate(*pp, team, numPreds);
 
-			//evaluate teams
-			feedForward* t = evaluate(*pp, team, numPreds);
-			//assign team scores
-			catches = catches + getCatches(t[0]);
+		cudaMemcpy(teams, d_teams, numBytes, cudaMemcpyDeviceToHost);
+		cudaDeviceSynchronize();
+		//assign team scores
+		//TODO: loop through all teams
+		for(int n = 0; n < numTrials;n++){
+			catches = catches + getCatches(teams[n][0]);
 			if(bestFitness == 0 && !teamfound){
-				bestFitness = getFitness(t[0]);
+				bestFitness = getFitness(teams[n][0]);
 			}
 
 			printf("best fitness %d\n", bestFitness);
-//			printf("this team fitness: %d\n", getFitness(t[0]));
+	//			printf("this team fitness: %d\n", getFitness(t[0]));
 
 			//keep track of the best performing team
-			if(getFitness(t[0]) > bestFitness){
-				bestFitness = getFitness(t[0]);
-				double* bestActivation = new double[t->numHidden];
-				Neuron** bestNeurons = new Neuron*[t->numHidden];
-				for(int i = 0;i<t->numHidden;i++){
-					bestActivation[i] = t->Activation[i];
-					bestNeurons[i] = t->HiddenUnits[i];
+			if(getFitness(teams[n][0]) > bestFitness){
+				bestFitness = getFitness(teams[n][0]);
+				double* bestActivation = new double[teams[n]->numHidden];
+				Neuron** bestNeurons = new Neuron*[teams[n]->numHidden];
+				for(int i = 0;i<teams[n]->numHidden;i++){
+					bestActivation[i] = teams[n]->Activation[i];
+					bestNeurons[i] = teams[n]->HiddenUnits[i];
 				}
 				bestTeam = new feedForward;
-				bestTeam[0].ID = t[0].ID;
-				bestTeam[0].Catches = t[0].Catches;
-				bestTeam[0].Fitness = t[0].Fitness;
-				bestTeam[0].GeneSize = t[0].GeneSize;
-				bestTeam[0].NumInputs = t[0].NumInputs;
-				bestTeam[0].NumOutputs = t[0].NumOutputs;
-				bestTeam[0].Parent1 = t[0].Parent1;
-				bestTeam[0].Parent2 = t[0].Parent2;
-				bestTeam[0].Trials = t[0].Trials;
-				bestTeam[0].bias = t[0].bias;
-				bestTeam[0].name = t[0].name;
-				bestTeam[0].numHidden = t[0].numHidden;
+				bestTeam[0].ID = teams[n][0].ID;
+				bestTeam[0].Catches = teams[n][0].Catches;
+				bestTeam[0].Fitness = teams[n][0].Fitness;
+				bestTeam[0].GeneSize = teams[n][0].GeneSize;
+				bestTeam[0].NumInputs = teams[n][0].NumInputs;
+				bestTeam[0].NumOutputs = teams[n][0].NumOutputs;
+				bestTeam[0].Parent1 = teams[n][0].Parent1;
+				bestTeam[0].Parent2 = teams[n][0].Parent2;
+				bestTeam[0].Trials = teams[n][0].Trials;
+				bestTeam[0].bias = teams[n][0].bias;
+				bestTeam[0].name = teams[n][0].name;
+				bestTeam[0].numHidden = teams[n][0].numHidden;
 				bestTeam[0].Activation=bestActivation;
 				bestTeam[0].HiddenUnits = bestNeurons;
 				//tag best team neurons
@@ -413,25 +474,25 @@ int main(int argc, char **argv)
 			//if this is the first run, take the team as the baseline best team
 			if(!teamfound){
 				teamfound = true;
-				double* bestActivation = new double[t->numHidden];
-				Neuron** bestNeurons = new Neuron*[t->numHidden];
-				for(int i = 0;i<t->numHidden;i++){
-					bestActivation[i] = t->Activation[i];
-					bestNeurons[i] = t->HiddenUnits[i];
+				double* bestActivation = new double[teams[n]->numHidden];
+				Neuron** bestNeurons = new Neuron*[teams[n]->numHidden];
+				for(int i = 0;i<teams[n]->numHidden;i++){
+					bestActivation[i] = teams[n]->Activation[i];
+					bestNeurons[i] = teams[n]->HiddenUnits[i];
 				}
 				bestTeam = new feedForward;
-				bestTeam[0].ID = t[0].ID;
-				bestTeam[0].Catches = t[0].Catches;
-				bestTeam[0].Fitness = t[0].Fitness;
-				bestTeam[0].GeneSize = t[0].GeneSize;
-				bestTeam[0].NumInputs = t[0].NumInputs;
-				bestTeam[0].NumOutputs = t[0].NumOutputs;
-				bestTeam[0].Parent1 = t[0].Parent1;
-				bestTeam[0].Parent2 = t[0].Parent2;
-				bestTeam[0].Trials = t[0].Trials;
-				bestTeam[0].bias = t[0].bias;
-				bestTeam[0].name = t[0].name;
-				bestTeam[0].numHidden = t[0].numHidden;
+				bestTeam[0].ID = teams[n][0].ID;
+				bestTeam[0].Catches = teams[n][0].Catches;
+				bestTeam[0].Fitness = teams[n][0].Fitness;
+				bestTeam[0].GeneSize = teams[n][0].GeneSize;
+				bestTeam[0].NumInputs = teams[n][0].NumInputs;
+				bestTeam[0].NumOutputs = teams[n][0].NumOutputs;
+				bestTeam[0].Parent1 = teams[n][0].Parent1;
+				bestTeam[0].Parent2 = teams[n][0].Parent2;
+				bestTeam[0].Trials = teams[n][0].Trials;
+				bestTeam[0].bias = teams[n][0].bias;
+				bestTeam[0].name = teams[n][0].name;
+				bestTeam[0].numHidden = teams[n][0].numHidden;
 				bestTeam[0].Activation=bestActivation;
 				bestTeam[0].HiddenUnits = bestNeurons;
 			}
