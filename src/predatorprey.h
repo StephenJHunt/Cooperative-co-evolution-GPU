@@ -23,19 +23,19 @@ PredatorPrey* newPredatorPrey(int numPreds){
 	return new PredatorPrey{"Predator Prey Task", st, new Gridworld};
 }
 
-void reset(PredatorPrey pp, int n){
-	pp.world->length = 100;
-	pp.world->height = 100;
+void reset(PredatorPrey* pp, int n){
+	pp->world->length = 100;
+	pp->world->height = 100;
 
-	pp.state->PreyX = 50;
-	pp.state->PreyY = 50;
+	pp->state->PreyX = 50;
+	pp->state->PreyY = 50;
 
 	for(int i=0;i<n;i++){
-		if(i>0) pp.state->PredatorX[i] = (i*2)-1 ;//-1 // (99/n)
-		else pp.state->PredatorX[i] = 0;
-		pp.state->PredatorY[i] = 0;//99
+		if(i>0) pp->state->PredatorX[i] = (i*2)-1 ;//-1 // (99/n)
+		else pp->state->PredatorX[i] = 0;
+		pp->state->PredatorY[i] = 0;//99
 	}
-	pp.state->Caught = false;
+	pp->state->Caught = false;
 }
 
 //__device__ void kernelReset(PredatorPrey pp, int n){
@@ -47,7 +47,7 @@ __device__ void setPreyPosition(PredatorPrey pp,int x, int y){
 	pp.state->PreyY = y;
 }
 
-int getMaxPosition(double* action, int actionlen){
+__device__ int getMaxPosition(double* action, int actionlen){
  double max = 0;
  int result = 0;
 // int n = 0;
@@ -73,7 +73,7 @@ int getMaxPosition(double* action, int actionlen){
  return result;
 }
 
-void PerformPredatorAction(PredatorPrey pp, int pos, double* action, int actionlen){
+__device__ void PerformPredatorAction(PredatorPrey pp, int pos, double* action, int actionlen){
 	int predAction = getMaxPosition(action, actionlen);
 //	printf("predaction:%d\n", predAction);
 	//possible movements. NESW in order
@@ -143,11 +143,11 @@ void PerformPredatorAction(PredatorPrey pp, int pos, double* action, int actionl
 
 	//is the predator at the same pos as the prey
 	if((pp.state->PredatorX[pos] == pp.state->PreyX) && (pp.state->PredatorY[pos] == pp.state->PreyY)){
-		caught = true;
+		pp.state->Caught = true;
 	}
 }
 
-void PerformPreyAction(PredatorPrey pp, int nearest){
+__device__ void PerformPreyAction(PredatorPrey pp, int nearest){
 	double xDistance = (double)(pp.state->PredatorX[nearest] - pp.state->PreyX);
 	if(abs(xDistance) > (double)(pp.world->length/2)){
 		double temp = xDistance;
@@ -207,8 +207,8 @@ Gridworld* getWorld(PredatorPrey pp){
 	return pp.world;
 }
 
-bool Caught(PredatorPrey pp){
-	return caught;
+__device__ bool Caught(PredatorPrey pp){
+	return pp.state->Caught;
 }
 
 

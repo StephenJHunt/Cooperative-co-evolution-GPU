@@ -8,7 +8,7 @@
 #include <math.h>
 #include <time.h>
 
-double Logistic(double b, double t){
+__device__ double Logistic(double b, double t){
 	double res = (1/ (1 + exp(-(b*t))));
 	if(res < 1.0)return 0;
 	return res;
