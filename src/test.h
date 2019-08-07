@@ -26,7 +26,7 @@
 /*
 __global__ void CUDAHello (){
 	printf("CUDA Hello\n");
-}*/
+}*//*
 void testRandom(){
 	printf("%f\n", CauchyRand(0.3));
 	printf("%f\n", CauchyRand(0.4));
@@ -35,7 +35,7 @@ void testRandom(){
 	printf("%f\n", CauchyRand(0.7));
 }
 void testSigmoid(){
-	printf("\n%f\n", Logistic(1.0, 2.0));
+//	printf("\n%f\n", Logistic(1.0, 2.0));
 }
 void testPop(){
 	Population* p = newPopulation(10, 10);
@@ -111,5 +111,5 @@ void runTests(){
 //	testEnvironment();
 //	testPredatorPrey();
 
-}
+}*/
 
