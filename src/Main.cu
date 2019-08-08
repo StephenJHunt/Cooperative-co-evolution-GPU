@@ -233,7 +233,7 @@ feedForward* evaluate(PredatorPrey e, feedForward* team, int numTeams){
 }
 */
 
-__global__ void runEvaluationsParallel(PredatorPrey* e, feedForward** teams, int numPreds, double* input, double* output, int inplen, int outlen, int trialsPerEval, bool sim, int numTrials){
+__global__ void runEvaluationsParallel(State* statepntr, Gridworld* worldpntr, feedForward** teams, int numPreds, double* input, double* output, int inplen, int outlen, int trialsPerEval, bool sim, int numTrials){
 	int index = threadIdx.x + blockIdx.x * blockDim.x;
 	int stride = blockDim.x * gridDim.x;
 
@@ -250,17 +250,12 @@ __global__ void runEvaluationsParallel(PredatorPrey* e, feedForward** teams, int
 			int avg_init_dist = 0;
 			int avg_final_dist = 0;
 
-			//do these before with cudaMallocManaged
-	//		int inplen = getTotalInputs(team[0]);
-	//		int outlen = getTotalOutputs(team[0]);
-	//		double* input = new double[inplen];
-	//		double* output = new double[outlen];
 			State state;
 			Gridworld world;
 
-			setPreyPosition(*e, PreyPositions[0][l], PreyPositions[1][l]);
-			State* statepntr = e->state;
-			Gridworld* worldpntr = e->world;
+			setPreyPosition(statepntr, PreyPositions[0][l], PreyPositions[1][l]);//use state instead of PredatorPrey?
+//			State* statepntr = e->state;
+//			Gridworld* worldpntr = e->world;
 			state = *statepntr;
 			world = *worldpntr;
 
@@ -273,7 +268,7 @@ __global__ void runEvaluationsParallel(PredatorPrey* e, feedForward** teams, int
 			}
 			avg_init_dist = avg_init_dist/numPreds;
 
-			while(!Caught(*e) && steps < maxSteps){//paralellise so that always runs maxSteps?
+			while(!Caught(statepntr) && steps < maxSteps){//paralellise so that always runs maxSteps?
 				for(int p=0; p < numPreds;p++){
 					currentDist = calculateDistance(worldpntr, state.PredatorX[p], state.PredatorY[p], state.PreyX, state.PreyY);
 					if(currentDist<nearestDist){
@@ -282,21 +277,19 @@ __global__ void runEvaluationsParallel(PredatorPrey* e, feedForward** teams, int
 					}
 				}
 
-				PerformPreyAction(*e, nearestPred);
+				PerformPreyAction(statepntr, worldpntr, nearestPred);
 
 				for(int pred = 0; pred < numPreds;pred++){
-					input[0] = double(e->state->PreyX);
-					input[1] = double(e->state->PreyY);
+					input[0] = double(statepntr->PreyX);
+					input[1] = double(statepntr->PreyY);
 					delete[] output;
 					output = new double[outlen];
 					double* out = Activate(teams[i][pred], input, inplen, output);
-					PerformPredatorAction(*e, pred, out, teams[i][pred].NumOutputs);
+					PerformPredatorAction(statepntr, worldpntr, pred, out, teams[i][pred].NumOutputs);//change to use state?
 				}
-				State* ts = e->state;
-				state = *ts;
 				steps++;
 			}
-			if(Caught(*e)){
+			if(Caught(statepntr)){
 				if(sim == true){
 					printf("Simulation Complete\n");
 					printf("Predator at position %d, %d caught the prey at position %d, %d after %d steps", state.PredatorX[nearestPred], state.PredatorY[nearestPred], state.PreyX, state.PreyY, steps);
@@ -308,7 +301,7 @@ __global__ void runEvaluationsParallel(PredatorPrey* e, feedForward** teams, int
 			}
 			avg_final_dist = avg_final_dist/numPreds;
 
-			if(!Caught(*e)){
+			if(!Caught(statepntr)){
 				fitness = (avg_init_dist - avg_final_dist);// /10
 			}else{
 				fitness = (200 - avg_final_dist)/10;
@@ -339,8 +332,8 @@ __global__ void runEvaluationsParallel(PredatorPrey* e, feedForward** teams, int
 				teams[i][pred].HiddenUnits[i] = n;
 			}
 		}
+//		printf("Team %d's fitness: %d\n",i , teams[i][0].Fitness);
 	}
-
 //	return team;
 }
 
@@ -384,19 +377,22 @@ int main(int argc, char **argv)
 		predSubPops[p] = subpops;
 	}
 
-	feedForward** teams;
+	feedForward teams[numTrials][numPreds];
 	feedForward** d_teams;
+	feedForward* h_team;
+	feedForward* d_team;
 	int numBytes = numTrials * (numPreds * sizeof(feedForward));
 //	cudaMallocManaged(&teams, numBytes);
-	cudaMalloc(&d_teams, numBytes);
+	cudaMalloc((void **)&d_teams, numBytes);
 //	for (int t =0;t < numTrials;t++){
-//		feedForward* team;
 //		numBytes = numPreds * sizeof(feedForward);
-//		cudaMallocManaged(&team, numBytes);
-//		teams[t] = team;
+//		cudaMalloc(&d_team, numBytes);
+////		cudaMallocManaged(&team, numBytes);
+//		teams[t] = h_team;
+//		cudaMemcpy(h_team, d_team, numBytes, cudaMemcpyHostToDevice);
 //	}
-	cudaMemcpy(teams, d_teams, numBytes, cudaMemcpyHostToDevice);
-//	team = new feedForward[numPreds];
+
+//	teams = new feedForward[numTrials][3];
 	//run simulation
 	while(generations < maxGens && catches < numTrials){//run contents of this loop in parallel
 		catches = 0;
@@ -410,13 +406,22 @@ int main(int argc, char **argv)
 				teams[t][p] = *ff;
 			}
 		}
+		cudaMemcpy(teams, d_teams, numBytes, cudaMemcpyHostToDevice);
+
+//		PredatorPrey* pp;
 		PredatorPrey* h_pp;
-		PredatorPrey* d_pp;
+		State* d_state;
+		Gridworld* d_world;
 //		cudaMallocManaged(&pp, sizeof(PredatorPrey));
-		cudaMalloc(&d_pp, sizeof(PredatorPrey));
+//		cudaMalloc((void**)&d_pp, sizeof(PredatorPrey));
+		cudaMalloc(&d_state, sizeof(State));
+		cudaMalloc(&d_world, sizeof(Gridworld));
 		h_pp = newPredatorPrey(numPreds);
+//		pp = newPredatorPrey(numPreds);
 		reset(h_pp, numPreds);
-		cudaMemcpy(h_pp, d_pp, sizeof(PredatorPrey), cudaMemcpyHostToDevice);
+//		reset(pp, numPreds);
+		cudaMemcpy(h_pp->state, d_state, sizeof(State), cudaMemcpyHostToDevice);
+		cudaMemcpy(h_pp->world, d_world, sizeof(Gridworld), cudaMemcpyHostToDevice);
 		//setup for kernel evaluation
 		int inplen = getTotalInputs(teams[0][0]);
 		int outlen = getTotalOutputs(teams[0][0]);
@@ -426,8 +431,8 @@ int main(int argc, char **argv)
 		cudaMallocManaged(&output, outlen * sizeof(double));
 
 		//evaluate teams
-		runEvaluationsParallel<<<blocks, threadsPerBlock>>>(d_pp, d_teams, numPreds, input, output, inplen, outlen, trialsPerEval, sim, numTrials);
-//			feedForward* t = evaluate(*pp, team, numPreds);
+		runEvaluationsParallel<<<blocks, threadsPerBlock>>>(d_state, d_world, d_teams, numPreds, input, output, inplen, outlen, trialsPerEval, sim, numTrials);
+//		feedForward* t = evaluate(*pp, team, numPreds);
 
 		cudaMemcpy(teams, d_teams, numBytes, cudaMemcpyDeviceToHost);
 		cudaDeviceSynchronize();

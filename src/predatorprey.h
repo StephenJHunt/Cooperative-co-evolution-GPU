@@ -42,9 +42,9 @@ void reset(PredatorPrey* pp, int n){
 //
 //}
 
-__device__ void setPreyPosition(PredatorPrey pp,int x, int y){
-	pp.state->PreyX = x;
-	pp.state->PreyY = y;
+__device__ void setPreyPosition(State* state,int x, int y){
+	state->PreyX = x;
+	state->PreyY = y;
 }
 
 __device__ int getMaxPosition(double* action, int actionlen){
@@ -73,26 +73,26 @@ __device__ int getMaxPosition(double* action, int actionlen){
  return result;
 }
 
-__device__ void PerformPredatorAction(PredatorPrey pp, int pos, double* action, int actionlen){
+__device__ void PerformPredatorAction(State* state, Gridworld* world, int pos, double* action, int actionlen){
 	int predAction = getMaxPosition(action, actionlen);
 //	printf("predaction:%d\n", predAction);
 	//possible movements. NESW in order
 	if(predAction == 0){
-		pp.state->PredatorY[pos]++;
+		state->PredatorY[pos]++;
 	}
 	else if(predAction == 1){
-		pp.state->PredatorX[pos]++;
+		state->PredatorX[pos]++;
 	}
 	else if(predAction == 2){
-		pp.state->PredatorY[pos]--;
+		state->PredatorY[pos]--;
 	}
 	else if(predAction == 3){
-		pp.state->PredatorX[pos]--;
+		state->PredatorX[pos]--;
 	}
 
 	//wrap around world
-	if(pp.state->PredatorX[pos] >= pp.world->length){
-		pp.state->PredatorX[pos] = pp.state->PredatorX[pos] - pp.world->length;
+	if(state->PredatorX[pos] >= world->length){
+		state->PredatorX[pos] = state->PredatorX[pos] - world->length;
 
 //		pp.state->PredatorX[pos] = pp.state->PredatorX[pos]-1;
 //
@@ -104,8 +104,8 @@ __device__ void PerformPredatorAction(PredatorPrey pp, int pos, double* action, 
 //		}
 
 	}
-	if(pp.state->PredatorY[pos] >= pp.world->height){
-		pp.state->PredatorY[pos] = pp.state->PredatorY[pos] - pp.world->height;
+	if(state->PredatorY[pos] >= world->height){
+		state->PredatorY[pos] = state->PredatorY[pos] - world->height;
 
 //		pp.state->PredatorY[pos] = pp.state->PredatorY[pos]-1;
 //
@@ -116,8 +116,8 @@ __device__ void PerformPredatorAction(PredatorPrey pp, int pos, double* action, 
 //			pp.state->PredatorX[pos]++;
 //		}
 	}
-	if(pp.state->PredatorX[pos] < 0){
-		pp.state->PredatorX[pos] = pp.state->PredatorX[pos] + pp.world->length;
+	if(state->PredatorX[pos] < 0){
+		state->PredatorX[pos] = state->PredatorX[pos] + world->length;
 
 //		pp.state->PredatorX[pos] = pp.state->PredatorX[pos]+1;
 //
@@ -128,8 +128,8 @@ __device__ void PerformPredatorAction(PredatorPrey pp, int pos, double* action, 
 //			pp.state->PredatorY[pos]++;
 //		}
 	}
-	if(pp.state->PredatorY[pos] < 0){
-		pp.state->PredatorY[pos] = pp.state->PredatorY[pos] + pp.world->height;
+	if(state->PredatorY[pos] < 0){
+		state->PredatorY[pos] = state->PredatorY[pos] + world->height;
 //
 //		pp.state->PredatorY[pos] = pp.state->PredatorY[pos]+1;
 //
@@ -142,25 +142,25 @@ __device__ void PerformPredatorAction(PredatorPrey pp, int pos, double* action, 
 	}
 
 	//is the predator at the same pos as the prey
-	if((pp.state->PredatorX[pos] == pp.state->PreyX) && (pp.state->PredatorY[pos] == pp.state->PreyY)){
-		pp.state->Caught = true;
+	if((state->PredatorX[pos] == state->PreyX) && (state->PredatorY[pos] == state->PreyY)){
+		state->Caught = true;
 	}
 }
 
-__device__ void PerformPreyAction(PredatorPrey pp, int nearest){
-	double xDistance = (double)(pp.state->PredatorX[nearest] - pp.state->PreyX);
-	if(abs(xDistance) > (double)(pp.world->length/2)){
+__device__ void PerformPreyAction(State* state, Gridworld* world, int nearest){
+	double xDistance = (double)(state->PredatorX[nearest] - state->PreyX);
+	if(abs(xDistance) > (double)(world->length/2)){
 		double temp = xDistance;
-		xDistance = (double)(pp.world->length - abs(xDistance));
+		xDistance = (double)(world->length - abs(xDistance));
 		if(temp > 0){
 			xDistance = 0- xDistance;
 		}
 	}
 
-	double yDistance = (double)(pp.state->PredatorY[nearest] - pp.state->PreyY);
-	if(abs(yDistance) > (double)(pp.world->height/2)){
+	double yDistance = (double)(state->PredatorY[nearest] - state->PreyY);
+	if(abs(yDistance) > (double)(world->height/2)){
 		double temp = yDistance;
-		yDistance = (double)(pp.world->height - abs(yDistance));
+		yDistance = (double)(world->height - abs(yDistance));
 		if(temp > 0){
 			yDistance = 0- yDistance;
 		}
@@ -168,32 +168,32 @@ __device__ void PerformPreyAction(PredatorPrey pp, int nearest){
 
 	//NESW movement
 	if(yDistance < 0 && (abs((double)(yDistance)) >= abs((double)xDistance))){
-		pp.state->PreyY++;
+		state->PreyY++;
 	}
 	else if(xDistance < 0 && (abs((double)xDistance) >= abs((double)yDistance))){
-		pp.state->PreyX++;
+		state->PreyX++;
 	}
 	else if(yDistance > 0 && (abs((double)(yDistance)) >= abs((double)xDistance))){
-		pp.state->PreyY--;
+		state->PreyY--;
 	}
 	else if(xDistance > 0 && (abs((double)(xDistance)) >= abs((double)yDistance))){
-		pp.state->PreyX--;
+		state->PreyX--;
 	}
 
-	if(pp.state->PreyX >= pp.world->length){
-		pp.state->PreyX = pp.state->PreyX - pp.world->length;
+	if(state->PreyX >= world->length){
+		state->PreyX = state->PreyX - world->length;
 //		pp.state->PreyX = pp.state->PreyX -1;
 	}
-	if(pp.state->PreyY >= pp.world->height){
-		pp.state->PreyY = pp.state->PreyY - pp.world->height;
+	if(state->PreyY >= world->height){
+		state->PreyY = state->PreyY - world->height;
 //		pp.state->PreyY = pp.state->PreyY-1;
 	}
-	if(pp.state->PreyX < 0){
-		pp.state->PreyX = pp.state->PreyX + pp.world->length;
+	if(state->PreyX < 0){
+		state->PreyX = state->PreyX + world->length;
 //		pp.state->PreyX = pp.state->PreyX+1;
 	}
-	if(pp.state->PreyY < 0){
-		pp.state->PreyY = pp.state->PreyY + pp.world->height;
+	if(state->PreyY < 0){
+		state->PreyY = state->PreyY + world->height;
 //		pp.state->PreyY = pp.state->PreyY+1;
 	}
 
@@ -207,8 +207,8 @@ Gridworld* getWorld(PredatorPrey pp){
 	return pp.world;
 }
 
-__device__ bool Caught(PredatorPrey pp){
-	return pp.state->Caught;
+__device__ bool Caught(State* state){
+	return state->Caught;
 }
 
 
