@@ -337,6 +337,12 @@ __global__ void runEvaluationsParallel(State* statepntr, Gridworld* worldpntr, f
 //	return team;
 }
 
+void CHECK(cudaError_t err){
+	if(err){
+		printf("Error in %s at line %d: %s\n", __FILE__, __LINE__, cudaGetErrorString(err));
+	}
+}
+
 int main(int argc, char **argv)
 {
 	//testing values
@@ -383,14 +389,14 @@ int main(int argc, char **argv)
 	feedForward* d_team;
 	int numBytes = numTrials * (numPreds * sizeof(feedForward));
 //	cudaMallocManaged(&teams, numBytes);
-	cudaMalloc((void **)&d_teams, numBytes);
-//	for (int t =0;t < numTrials;t++){
-//		numBytes = numPreds * sizeof(feedForward);
-//		cudaMalloc(&d_team, numBytes);
-////		cudaMallocManaged(&team, numBytes);
-//		teams[t] = h_team;
-//		cudaMemcpy(h_team, d_team, numBytes, cudaMemcpyHostToDevice);
-//	}
+	CHECK(cudaMalloc((void **)&d_teams, numBytes));
+	for (int t =0;t < numTrials;t++){
+		numBytes = numPreds * sizeof(feedForward);
+		cudaMalloc(&d_team, numBytes);
+//		cudaMallocManaged(&team, numBytes);
+		teams[t] = h_team;
+		CHECK(cudaMemcpy(h_team, d_team, numBytes, cudaMemcpyHostToDevice));
+	}
 
 //	teams = new feedForward[numTrials][3];
 	//run simulation
@@ -403,10 +409,11 @@ int main(int argc, char **argv)
 			for(int p = 0;p<numPreds;p++){
 				feedForward* ff = newFeedForward(numInputs, hidden, numOutputs, false);
 				Create(*ff, predSubPops[p], hidden);
+
 				teams[t][p] = *ff;
 			}
 		}
-		cudaMemcpy(teams, d_teams, numBytes, cudaMemcpyHostToDevice);
+		CHECK(cudaMemcpy(teams, d_teams, numBytes, cudaMemcpyHostToDevice));
 
 //		PredatorPrey* pp;
 		PredatorPrey* h_pp;
@@ -420,21 +427,27 @@ int main(int argc, char **argv)
 //		pp = newPredatorPrey(numPreds);
 		reset(h_pp, numPreds);
 //		reset(pp, numPreds);
-		cudaMemcpy(h_pp->state, d_state, sizeof(State), cudaMemcpyHostToDevice);
-		cudaMemcpy(h_pp->world, d_world, sizeof(Gridworld), cudaMemcpyHostToDevice);
+		CHECK(cudaMemcpy(h_pp->state, d_state, sizeof(State), cudaMemcpyHostToDevice));
+		CHECK(cudaMemcpy(h_pp->world, d_world, sizeof(Gridworld), cudaMemcpyHostToDevice));
 		//setup for kernel evaluation
 		int inplen = getTotalInputs(teams[0][0]);
 		int outlen = getTotalOutputs(teams[0][0]);
 		double* input;
-		cudaMallocManaged(&input, inplen * sizeof(double));
+		CHECK(cudaMallocManaged(&input, inplen * sizeof(double)));
 		double* output;
-		cudaMallocManaged(&output, outlen * sizeof(double));
+		CHECK(cudaMallocManaged(&output, outlen * sizeof(double)));
 
 		//evaluate teams
 		runEvaluationsParallel<<<blocks, threadsPerBlock>>>(d_state, d_world, d_teams, numPreds, input, output, inplen, outlen, trialsPerEval, sim, numTrials);
 //		feedForward* t = evaluate(*pp, team, numPreds);
 
-		cudaMemcpy(teams, d_teams, numBytes, cudaMemcpyDeviceToHost);
+		//send memory back
+		numBytes = numTrials * (numPreds * sizeof(feedForward));
+		CHECK(cudaMemcpy(teams, d_teams, numBytes, cudaMemcpyDeviceToHost));
+		for(int t = 0;t<numTrials;t++){
+			numBytes = numPreds * sizeof(feedForward);
+			CHECK(cudaMemcpy(h_team, d_teams[t], numBytes, cudaMemcpyDeviceToHost));
+		}
 		cudaDeviceSynchronize();
 		//assign team scores
 		//TODO: loop through all teams
@@ -537,6 +550,10 @@ int main(int argc, char **argv)
 		}
 		stagnated = false;
 		generations++;
+		CHECK(cudaFree(d_teams));
+		CHECK(cudaFree(d_state));
+		CHECK(cudaFree(d_world));
+
 	}
 }
 
