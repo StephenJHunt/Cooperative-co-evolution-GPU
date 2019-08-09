@@ -408,9 +408,11 @@ int main(int argc, char **argv)
 			//initialise teams
 			for(int p = 0;p<numPreds;p++){
 				feedForward* ff = newFeedForward(numInputs, hidden, numOutputs, false);
+				Neuron** d_hidden;
 				Create(*ff, predSubPops[p], hidden);
-
+				CHECK(cudaMalloc(&d_hidden, hidden * sizeof(Neuron)));
 				teams[t][p] = *ff;
+				CHECK(cudaMemcpy(ff->HiddenUnits, d_hidden, hidden*sizeof(Neuron), cudaMemcpyHostToDevice));
 			}
 		}
 		CHECK(cudaMemcpy(teams, d_teams, numBytes, cudaMemcpyHostToDevice));
