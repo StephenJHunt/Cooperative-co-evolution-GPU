@@ -392,10 +392,11 @@ int main(int argc, char **argv)
 	CHECK(cudaMalloc((void **)&d_teams, numBytes));
 	for (int t =0;t < numTrials;t++){
 		numBytes = numPreds * sizeof(feedForward);
-		cudaMalloc(&d_team, numBytes);
+		CHECK(cudaMalloc(&d_team, numBytes));
 //		cudaMallocManaged(&team, numBytes);
-		teams[t] = h_team;
-		CHECK(cudaMemcpy(h_team, d_team, numBytes, cudaMemcpyHostToDevice));
+//		teams[t] = h_team;
+		d_teams[t] = d_team;
+//		CHECK(cudaMemcpy(h_team, d_team, numBytes, cudaMemcpyHostToDevice));
 	}
 
 //	teams = new feedForward[numTrials][3];
