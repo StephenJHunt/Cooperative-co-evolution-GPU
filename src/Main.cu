@@ -343,6 +343,10 @@ void CHECK(cudaError_t err){
 	}
 }
 
+struct teamArr{
+	feedForward* teams;
+};
+
 int main(int argc, char **argv)
 {
 	//testing values
@@ -383,8 +387,10 @@ int main(int argc, char **argv)
 		predSubPops[p] = subpops;
 	}
 
-	feedForward teams[numTrials][numPreds];
-	feedForward** d_teams;
+//	feedForward teams[numTrials][numPreds];
+	teamArr* teams;
+//	feedForward** d_teams;
+	teamArr* d_teams;
 	feedForward* h_team;
 	feedForward* d_team;
 	int numBytes = numTrials * (numPreds * sizeof(feedForward));
@@ -433,8 +439,10 @@ int main(int argc, char **argv)
 		CHECK(cudaMemcpy(h_pp->state, d_state, sizeof(State), cudaMemcpyHostToDevice));
 		CHECK(cudaMemcpy(h_pp->world, d_world, sizeof(Gridworld), cudaMemcpyHostToDevice));
 		//setup for kernel evaluation
-		int inplen = getTotalInputs(teams[0][0]);
-		int outlen = getTotalOutputs(teams[0][0]);
+//		int inplen = getTotalInputs(teams[0][0]);
+		int inplen = getTotalInputs(teams[0].teams[0]);
+//		int outlen = getTotalOutputs(teams[0][0]);
+		int outlen = getTotalOutputs(teams[0].teams[0]);
 		double* input;
 		CHECK(cudaMallocManaged(&input, inplen * sizeof(double)));
 		double* output;
