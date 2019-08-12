@@ -37,9 +37,17 @@ int popCounter = 0;
 
 Population* newPopulation(int size, int genesize){
 	popCounter++;
-	Neuron* narr = new Neuron[size];
-	Population* p = new Population{popCounter, narr, size, true, size/4, genesize};
-
+//	Neuron* narr = new Neuron[size];
+	Neuron n;
+	Population* p = new Population;//{popCounter, size, true, size/4, genesize};
+	for(int i =0;i<size;i++){
+		p->Individuals[i] = n;
+	}
+	p->Evolvable = true;
+	p->GeneSize=genesize;
+	p->ID=popCounter;
+	p->NumToBreed=size/4;
+	p->numIndividuals=size;
 	return p;
 }
 /*
@@ -61,9 +69,9 @@ bool Less(Neuron* n, int i, int j){
 void createIndividuals(Population p){
 	if(p.Evolvable){
 		for(int i=0;i<p.numIndividuals;i++){
-			Neuron n = newNeuron(p.GeneSize);
-			createWeights(n, p.GeneSize);
-			p.Individuals[i] = n;
+			Neuron* n = newNeuron(p.GeneSize);
+			createWeights(*n, p.GeneSize);
+			p.Individuals[i] = *n;
 		}
 	}
 }
@@ -93,7 +101,7 @@ Population sortNeurons(Population p){
 	for(int i = 0;i<p.numIndividuals;i++){
 		for(int j = 0;j<p.numIndividuals;j++){
 			if(p.Individuals[i].Fitness > p.Individuals[j].Fitness){
-				Neuron* temp = p.Individuals[i];
+				Neuron temp = p.Individuals[i];
 				p.Individuals[i] = p.Individuals[j];
 				p.Individuals[j] = temp;
 			}

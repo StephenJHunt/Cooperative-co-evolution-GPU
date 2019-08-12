@@ -46,26 +46,48 @@ feedForward* newFeedForward(int in, int hid, int out, bool bias){
 	if(bias){
 		genesize++;
 	}
-	double* actArr = new double[hid];
-	Neuron* neuArr = new Neuron[hid];
-	feedForward* ff = new feedForward{counter, actArr, neuArr, in, out, bias, 0, 0, 0, -1, -1, "Feed Forward", genesize, hid};
+//	double* actArr = new double[hid];
+//	Neuron* neuArr = new Neuron[hid];
+//	double actArr[15];
+//	Neuron neuArr[15];
+//	feedForward* ff = new feedForward{counter, actArr, neuArr, in, out, bias, 0, 0, 0, -1, -1, "Feed Forward", genesize, hid};
+	feedForward* ff = new feedForward;
+	Neuron n;
+	for(int i=0;i<hid;i++){
+		ff->Activation[i] = 0;
+		ff->HiddenUnits[i] = n;
+	}
+//	ff->Activation = actArr;
+	ff->Catches=0;
+	ff->Fitness=0;
+	ff->GeneSize=genesize;
+//	ff->HiddenUnits=neuArr;
+	ff->ID=counter;
+	ff->NumInputs=in;
+	ff->NumOutputs=out;
+	ff->Parent1=-1;
+	ff->Parent2=-1;
+	ff->Trials=0;
+	ff->bias=false;
+	ff->name="Feed Forward";
+	ff->numHidden=hid;
 	return ff;
 }
 
 __device__ double* Activate(feedForward f, double* input, int inputLen, double* output){
 	for(int key = 0; key< f.numHidden;key++){
-		Neuron* n = f.HiddenUnits[key];
-		if(!n->Lesioned){
+		Neuron n = f.HiddenUnits[key];
+		if(!n.Lesioned){
 			for(int i = 0; i< inputLen;i++){
-				f.Activation[key] = f.Activation[key] + (n->Weight[i] * input[i]);
+				f.Activation[key] = f.Activation[key] + (n.Weight[i] * input[i]);
 			}
 			f.Activation[key] = Logistic(1.0, f.Activation[key]);
 		}
 	}
 	for(int i=0;i<f.NumOutputs;i++){
 		for(int key = 0; key<f.numHidden; key++){
-			Neuron* n = f.HiddenUnits[key];
-			output[i] = output[i] + (f.Activation[key] * n->Weight[inputLen + i]);
+			Neuron n = f.HiddenUnits[key];
+			output[i] = output[i] + (f.Activation[key] * n.Weight[inputLen + i]);
 		}
 //		output[i] = Direction((double)output[i]);//call different
 	}
@@ -125,21 +147,24 @@ int getID(feedForward f){
 
 void setNeuronFitness(feedForward f){
 	for(int i = 0; i<f.numHidden;i++){
-		Neuron* n = f.HiddenUnits[i];
-		setFitness(*n, f.Fitness);
-		n->Trials++;
+		Neuron n = f.HiddenUnits[i];
+		setFitness(n, f.Fitness);
+		n.Trials++;
 	}
 }
 
 void Tag(feedForward f){
 	for(int i = 0; i<f.numHidden;i++){
-		Neuron* n = f.HiddenUnits[i];
-		n->Tag = true;
+		Neuron n = f.HiddenUnits[i];
+		n.Tag = true;
 	}
 }
 
 void resetActivation(feedForward f){
-	f.Activation = new double[f.numHidden];
+//	f.Activation = new double[f.numHidden];
+	for(int i =0;i<f.numHidden;i++){
+		f.Activation[i] = 0;
+	}
 }
 
 void resetFitness(feedForward f){

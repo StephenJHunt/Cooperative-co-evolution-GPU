@@ -331,9 +331,9 @@ __global__ void runEvaluationsParallel(State* statepntr, Gridworld* worldpntr, t
 	//		kernelAssignFitness<<<1, team[pred].numHidden>>>(total_fitness, team[pred].HiddenUnits);
 	//		cudaDeviceSynchronize();
 			for(int i = 0; i<teams[i].teams[pred].numHidden;i++){
-				Neuron* n = teams[i].teams[pred].HiddenUnits[i];
-				n->Fitness = teams[i].teams[pred].Fitness;
-				n->Trials++;
+				Neuron n = teams[i].teams[pred].HiddenUnits[i];
+				n.Fitness = teams[i].teams[pred].Fitness;
+				n.Trials++;
 				teams[i].teams[pred].HiddenUnits[i] = n;
 			}
 		}
@@ -407,7 +407,7 @@ int main(int argc, char **argv)
 		CHECK(cudaMalloc(&d_team, numBytes));
 //		cudaMallocManaged(&team, numBytes);
 //		teams[t] = h_team;
-		d_teams[t] = d_team;
+//		d_teams[t] = d_team;
 //		CHECK(cudaMemcpy(h_team, d_team, numBytes, cudaMemcpyHostToDevice));
 	}
 
@@ -424,7 +424,7 @@ int main(int argc, char **argv)
 				Neuron** d_hidden;
 				Create(*ff, predSubPops[p], hidden);
 				CHECK(cudaMalloc(&d_hidden, hidden * sizeof(Neuron)));
-				teams[t][p] = *ff;
+				teams[t].teams[p] = *ff;
 				CHECK(cudaMemcpy(ff->HiddenUnits, d_hidden, hidden*sizeof(Neuron), cudaMemcpyHostToDevice));
 			}
 		}
@@ -481,10 +481,10 @@ int main(int argc, char **argv)
 			if(getFitness(teams[n].teams[0]) > bestFitness){
 				bestFitness = getFitness(teams[n].teams[0]);
 				double* bestActivation = new double[teams[n].teams[0].numHidden];
-				Neuron** bestNeurons = new Neuron*[teams[n].teams[0].numHidden];
+				Neuron* bestNeurons = new Neuron[teams[n].teams[0].numHidden];
 				for(int i = 0;i<teams[n].teams[0].numHidden;i++){
-					bestActivation[i] = teams[n].teams[0].Activation[i];
-					bestNeurons[i] = teams[n].teams[0].HiddenUnits[i];
+					bestTeam[0].Activation[i] = teams[n].teams[0].Activation[i];
+					bestTeam[0].HiddenUnits[i] = teams[n].teams[0].HiddenUnits[i];
 				}
 				bestTeam = new feedForward;
 				bestTeam[0].ID = teams[n].teams[0].ID;
@@ -499,8 +499,8 @@ int main(int argc, char **argv)
 				bestTeam[0].bias = teams[n].teams[0].bias;
 				bestTeam[0].name = teams[n].teams[0].name;
 				bestTeam[0].numHidden = teams[n].teams[0].numHidden;
-				bestTeam[0].Activation=bestActivation;
-				bestTeam[0].HiddenUnits = bestNeurons;
+//				bestTeam[0].Activation=bestActivation;
+//				bestTeam[0].HiddenUnits = bestNeurons;
 				//tag best team neurons
 				for(int i = 0;i<numPreds;i++){
 					Tag(bestTeam[0]);
@@ -510,10 +510,10 @@ int main(int argc, char **argv)
 			if(!teamfound){
 				teamfound = true;
 				double* bestActivation = new double[teams[n].teams[0].numHidden];
-				Neuron** bestNeurons = new Neuron*[teams[n].teams[0].numHidden];
+				Neuron* bestNeurons = new Neuron[teams[n].teams[0].numHidden];
 				for(int i = 0;i<teams[n].teams[0].numHidden;i++){
-					bestActivation[i] = teams[n].teams[0].Activation[i];
-					bestNeurons[i] = teams[n].teams[0].HiddenUnits[i];
+					bestTeam[0].Activation[i] = teams[n].teams[0].Activation[i];
+					bestTeam[0].HiddenUnits[i] = teams[n].teams[0].HiddenUnits[i];
 				}
 				bestTeam = new feedForward;
 				bestTeam[0].ID = teams[n].teams[0].ID;
@@ -528,8 +528,8 @@ int main(int argc, char **argv)
 				bestTeam[0].bias = teams[n].teams[0].bias;
 				bestTeam[0].name = teams[n].teams[0].name;
 				bestTeam[0].numHidden = teams[n].teams[0].numHidden;
-				bestTeam[0].Activation=bestActivation;
-				bestTeam[0].HiddenUnits = bestNeurons;
+//				bestTeam[0].Activation = teams[n].teams[0].Activation;
+//				bestTeam[0].HiddenUnits = *bestNeurons;
 			}
 		}
 
@@ -545,12 +545,12 @@ int main(int argc, char **argv)
 				for(int i = 0; i< hidden;i++){
 					Population subpop = predPop[i];
 					for(int n = 0; n< numIndivs;n++){
-						Neuron* indiv = subpop.Individuals[n];
-						Neuron** hid = getHiddenUnits(bestTeam[0]);
+						Neuron indiv = subpop.Individuals[n];
+						Neuron* hid = getHiddenUnits(bestTeam[0]);
 //						if(n ==19){
 //							n = 19;
 //						}
-						subpop.Individuals[n] = perturb(indiv, *hid[i], bestTeam->GeneSize);
+						subpop.Individuals[n] = perturb(indiv, hid[i], bestTeam->GeneSize);
 					}
 				}
 			}

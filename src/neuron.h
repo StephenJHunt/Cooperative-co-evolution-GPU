@@ -30,32 +30,35 @@ int Ncounter = 0;
 Neuron* newNeuron(int size){
 	Ncounter++;
 	double* w = new double[size];
-	Neuron* n = new Neuron{-1, -1, Ncounter, "Neuron", w, size};
+	Neuron* n = new Neuron{-1, -1, Ncounter, "Neuron", {0, 0, 0, 0, 0, 0, 0}, size};
+
 	return n;
 }
 
-void createWeights(Neuron n, int size){
+Neuron createWeights(Neuron n, int size){
 //	srand(time(0));
 	for(int i=0;i<size;i++){
 		double r = (double)((rand() % (13 - 6)) + 6);
 		n.Weight[i] = r;
 	}
+	return n;
 }
 
-void setFitness(Neuron n, int fitness){
+Neuron setFitness(Neuron n, int fitness){
 	n.Fitness = n.Fitness + fitness;
+	return n;
 }
 
-Neuron* perturb(Neuron* n, Neuron best, int size){
-	if(!n->Tag){
+Neuron perturb(Neuron n, Neuron best, int size){
+	if(!n.Tag){
 		double coef = 0.3;
 		for(int i=0;i<size;i++){
-			n->Weight[i] = best.Weight[i] + CauchyRand(coef);
+			n.Weight[i] = best.Weight[i] + CauchyRand(coef);
 		}
 	}
 	//reset
-	n->Fitness = 0;
-	n->Trials = 0;
+	n.Fitness = 0;
+	n.Trials = 0;
 	return n;
 }
 
