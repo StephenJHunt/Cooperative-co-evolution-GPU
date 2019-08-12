@@ -16,7 +16,8 @@ struct Neuron{
 	int Parent2;
 	int ID;
 	char* Name;
-	double* Weight;
+//	double* Weight;
+	double Weight[7];
 	int size;
 	bool Lesioned;
 	int Trials;

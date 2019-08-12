@@ -25,7 +25,8 @@
 
 struct Population{
 	int ID;
-	Neuron* Individuals;
+//	Neuron* Individuals;
+	Neuron Individuals[15];
 	int numIndividuals;
 	bool Evolvable;
 	int NumToBreed;

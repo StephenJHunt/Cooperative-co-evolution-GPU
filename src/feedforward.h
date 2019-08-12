@@ -22,8 +22,10 @@
 
 struct feedForward {
 	int ID;
-	double* Activation;
-	Neuron* HiddenUnits;
+//	double* Activation;
+	double Activation[15];
+//	Neuron* HiddenUnits;
+	Neuron HiddenUnits[15];
 	int NumInputs;
 	int NumOutputs;
 	bool bias;
