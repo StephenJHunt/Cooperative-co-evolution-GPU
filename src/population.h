@@ -26,7 +26,7 @@
 struct Population{
 	int ID;
 //	Neuron* Individuals;
-	Neuron Individuals[15];
+	Neuron Individuals[100];
 	int numIndividuals;
 	bool Evolvable;
 	int NumToBreed;
@@ -38,10 +38,10 @@ int popCounter = 0;
 Population* newPopulation(int size, int genesize){
 	popCounter++;
 //	Neuron* narr = new Neuron[size];
-	Neuron n;
+	Neuron* n = new Neuron;
 	Population* p = new Population;//{popCounter, size, true, size/4, genesize};
 	for(int i =0;i<size;i++){
-		p->Individuals[i] = n;
+		p->Individuals[i] = *n;
 	}
 	p->Evolvable = true;
 	p->GeneSize=genesize;
@@ -66,12 +66,12 @@ bool Less(Neuron* n, int i, int j){
 	return (n1.Fitness / div1) > (n2.Fitness / div2);
 }*/
 
-void createIndividuals(Population p){
-	if(p.Evolvable){
-		for(int i=0;i<p.numIndividuals;i++){
-			Neuron* n = newNeuron(p.GeneSize);
-			createWeights(*n, p.GeneSize);
-			p.Individuals[i] = *n;
+void createIndividuals(Population* p){
+	if(p->Evolvable){
+		for(int i=0;i<p->numIndividuals;i++){
+			Neuron* n = newNeuron(p->GeneSize);
+			*n = createWeights(*n, p->GeneSize);
+			p->Individuals[i] = *n;
 		}
 	}
 }

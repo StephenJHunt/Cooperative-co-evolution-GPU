@@ -52,10 +52,10 @@ feedForward* newFeedForward(int in, int hid, int out, bool bias){
 //	Neuron neuArr[15];
 //	feedForward* ff = new feedForward{counter, actArr, neuArr, in, out, bias, 0, 0, 0, -1, -1, "Feed Forward", genesize, hid};
 	feedForward* ff = new feedForward;
-	Neuron n;
+	Neuron* n = new Neuron;
 	for(int i=0;i<hid;i++){
 		ff->Activation[i] = 0;
-		ff->HiddenUnits[i] = n;
+		ff->HiddenUnits[i] = *n;
 	}
 //	ff->Activation = actArr;
 	ff->Catches=0;
