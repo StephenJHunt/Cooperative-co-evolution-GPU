@@ -25,7 +25,7 @@
 
 struct Population{
 	int ID;
-	Neuron** Individuals;
+	Neuron* Individuals;
 	int numIndividuals;
 	bool Evolvable;
 	int NumToBreed;
@@ -36,7 +36,7 @@ int popCounter = 0;
 
 Population* newPopulation(int size, int genesize){
 	popCounter++;
-	Neuron** narr = new Neuron*[size];
+	Neuron* narr = new Neuron[size];
 	Population* p = new Population{popCounter, narr, size, true, size/4, genesize};
 
 	return p;
@@ -60,14 +60,14 @@ bool Less(Neuron* n, int i, int j){
 void createIndividuals(Population p){
 	if(p.Evolvable){
 		for(int i=0;i<p.numIndividuals;i++){
-			Neuron* n = newNeuron(p.GeneSize);
-			createWeights(*n, p.GeneSize);
+			Neuron n = newNeuron(p.GeneSize);
+			createWeights(n, p.GeneSize);
 			p.Individuals[i] = n;
 		}
 	}
 }
 
-Neuron* selectNeuron(Population p){
+Neuron selectNeuron(Population p){
 	srand(time(0));
 	int idx = rand() % p.numIndividuals;
 //	printf("select neuron rand: %d\n", idx);
@@ -91,7 +91,7 @@ Population sortNeurons(Population p){
 //	std::sort(p.Individuals, p.Individuals + p.numIndividuals);//is not working
 	for(int i = 0;i<p.numIndividuals;i++){
 		for(int j = 0;j<p.numIndividuals;j++){
-			if(p.Individuals[i]->Fitness > p.Individuals[j]->Fitness){
+			if(p.Individuals[i].Fitness > p.Individuals[j].Fitness){
 				Neuron* temp = p.Individuals[i];
 				p.Individuals[i] = p.Individuals[j];
 				p.Individuals[j] = temp;
@@ -136,7 +136,7 @@ Population mate(Population p){
 		}
 		int childIndex1 = p.numIndividuals - (1 + (i *2));
 		int childIndex2 = p.numIndividuals - (2 + (i *2));
-		onePointCrossover(p.Individuals[i], p.Individuals[mate], p.Individuals[childIndex1], p.Individuals[childIndex2]);
+		onePointCrossover(&p.Individuals[i], &p.Individuals[mate], &p.Individuals[childIndex1], &p.Individuals[childIndex2]);
 	}
 	return p;
 }
@@ -146,7 +146,7 @@ Population mutate(Population p, double m){
 	for(int i=p.NumToBreed;i<p.numIndividuals;i++){
 		if(((double)rand()) < m){
 			int mutationIndex = rand() % p.GeneSize;
-			p.Individuals[i]->Weight[mutationIndex] = p.Individuals[i]->Weight[mutationIndex] + CauchyRand(0.3);
+			p.Individuals[i].Weight[mutationIndex] = p.Individuals[i].Weight[mutationIndex] + CauchyRand(0.3);
 		}
 	}
 	return p;
