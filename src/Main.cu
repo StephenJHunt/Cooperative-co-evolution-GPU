@@ -456,6 +456,7 @@ int main(int argc, char **argv)
 			tm.numInputs = ff->NumInputs;
 			tm.numOutputs = ff->NumOutputs;
 			teams[t].team = tm;
+			//copy everything to GPU struct
 			CHECK(cudaMemcpy(&d_teams[t].team, &teams[t].team, sizeof(team), cudaMemcpyHostToDevice));
 			CHECK(cudaMemcpy(&d_teams[t].team.t1, &teams[t].team.t1, sizeof(teams[t].team.t1), cudaMemcpyHostToDevice));
 			CHECK(cudaMemcpy(&d_teams[t].team.t2, &teams[t].team.t2, sizeof(teams[t].team.t2), cudaMemcpyHostToDevice));
@@ -507,7 +508,7 @@ int main(int argc, char **argv)
 //		runEvaluationsParallel<<<blocks, threadsPerBlock>>>(d_state, d_world, d_teams, numPreds, input, output, inplen, outlen, trialsPerEval, sim, numTrials);
 //		feedForward* t = evaluate(*pp, team, numPreds);
 
-//		cudaDeviceSynchronize();
+		cudaDeviceSynchronize();
 		//send memory back
 		numBytes = numTrials * sizeof(team);
 		CHECK(cudaMemcpy(teams, d_teams, numBytes, cudaMemcpyDeviceToHost));
