@@ -72,19 +72,19 @@ struct tempState{
 struct team{
 	int numOutputs;
 	int numInputs;
-	double* act1;
-	Neuron* t1;
-	double* act2;
-	Neuron* t2;
-	double* act3;
-	Neuron* t3;
+	double act1[15];
+	Neuron t1[15];
+	double act2[15];
+	Neuron t2[15];
+	double act3[15];
+	Neuron t3[15];
 	int fitness;
 	int numHidden;
 	int catches;
 };
 
 struct teamArr{
-	team* teams;
+	team team;
 };
 
 
@@ -363,7 +363,9 @@ void CHECK(cudaError_t err){
 
 __global__ void testKernel(teamArr* teams){
 	int index = threadIdx.x;
-	printf(team[index].)
+	double test = teams[index].team.t1[0].Weight[0];
+	teams[index].team.fitness = index;
+//	printf("Index %d Weight %d\n", index, test);
 }
 
 int main(int argc, char **argv)
@@ -410,18 +412,20 @@ int main(int argc, char **argv)
 	teamArr* teams;
 //	feedForward** d_teams;
 	teamArr* d_teams;
-	feedForward* h_team;
-	feedForward* d_team;
-	int numBytes = numTrials * (numPreds * sizeof(feedForward));
+	team h_team;
+	team d_team;
+	int numBytes = numTrials * sizeof(team);
 //	cudaMallocManaged(&teams, numBytes);
 	CHECK(cudaMalloc((void **)&d_teams, numBytes));
-	teams = new teamArr();
+	teams = (teamArr*)malloc(numBytes);
+//	teams = new teamArr();
 	for (int t =0;t < numTrials;t++){
-		numBytes = numPreds * sizeof(feedForward);
-		CHECK(cudaMalloc(&d_team, numBytes));
-		h_team = new feedForward();
-		teams[t].teams = h_team;
-		d_teams[t].teams = d_team;
+		numBytes = sizeof(team);
+		CHECK(cudaMalloc((void**)&teams[t].team, numBytes));
+
+//		h_team = new team();
+//		teams.teams = h_team;
+//		d_teams.teams = d_team;
 //		cudaMallocManaged(&team, numBytes);
 //		teams[t] = h_team;
 //		d_teams[t] = d_team;
@@ -432,16 +436,35 @@ int main(int argc, char **argv)
 	//run simulation
 	while(generations < maxGens && catches < numTrials){//run contents of this loop in parallel
 		catches = 0;
-
+		feedForward* ff = newFeedForward(numInputs, hidden, numOutputs, false);
 		for(int t = 0; t < numTrials;t++){
-
 			for(int p = 0;p<numPreds;p++){
-				feedForward* ff = newFeedForward(numInputs, hidden, numOutputs, false);
-				Create(*ff, predSubPops[p], hidden);
-				h_team[p] = *ff;
+				ff[p] = Create(ff[p], predSubPops[p], hidden);
 			}
-
-			CHECK(cudaMemcpy(h_team, d_team, numPreds*sizeof(feedForward), cudaMemcpyHostToDevice));
+			team tm;
+			for(int i = 0;i<hidden;i++){
+				tm.act1[i] = ff[0].Activation[i];
+				tm.act2[i] = ff[1].Activation[i];
+				tm.act3[i] = ff[2].Activation[i];
+				tm.t1[i] = ff[0].HiddenUnits[i];
+				tm.t2[i] = ff[1].HiddenUnits[i];
+				tm.t3[i] = ff[2].HiddenUnits[i];
+			}
+			tm.catches = ff->Catches;
+			tm.fitness = ff->Fitness;
+			tm.numHidden = ff->numHidden;
+			tm.numInputs = ff->NumInputs;
+			tm.numOutputs = ff->NumOutputs;
+			teams[t].team = tm;
+			CHECK(cudaMemcpy(&d_teams[t].team, &teams[t].team, sizeof(team), cudaMemcpyHostToDevice));
+			CHECK(cudaMemcpy(&d_teams[t].team.t1, &teams[t].team.t1, sizeof(teams[t].team.t1), cudaMemcpyHostToDevice));
+			CHECK(cudaMemcpy(&d_teams[t].team.t2, &teams[t].team.t2, sizeof(teams[t].team.t2), cudaMemcpyHostToDevice));
+			CHECK(cudaMemcpy(&d_teams[t].team.t3, &teams[t].team.t3, sizeof(teams[t].team.t3), cudaMemcpyHostToDevice));
+			CHECK(cudaMemcpy(&d_teams[t].team.act1, &teams[t].team.act1, sizeof(teams[t].team.act1), cudaMemcpyHostToDevice));
+			CHECK(cudaMemcpy(&d_teams[t].team.act2, &teams[t].team.act2, sizeof(teams[t].team.act2), cudaMemcpyHostToDevice));
+			CHECK(cudaMemcpy(&d_teams[t].team.act3, &teams[t].team.act3, sizeof(teams[t].team.act3), cudaMemcpyHostToDevice));
+//			CHECK(cudaMemcpy(&(d_teams->team), &tm, sizeof(team), cudaMemcpyHostToDevice));
+//			free(ff);
 			//initialise teams
 //			for(int p = 0;p<numPreds;p++){
 //				feedForward* ff = newFeedForward(numInputs, hidden, numOutputs, false);
@@ -452,7 +475,8 @@ int main(int argc, char **argv)
 //				CHECK(cudaMemcpy(ff->HiddenUnits, d_hidden, hidden*sizeof(Neuron), cudaMemcpyHostToDevice));
 //			}
 		}
-		CHECK(cudaMemcpy(teams, d_teams, numBytes, cudaMemcpyHostToDevice));
+		int numBytes = numTrials * sizeof(team);
+		CHECK(cudaMemcpy(d_teams, teams, numBytes, cudaMemcpyHostToDevice));
 
 //		PredatorPrey* pp;
 		PredatorPrey* h_pp;
@@ -466,45 +490,56 @@ int main(int argc, char **argv)
 //		pp = newPredatorPrey(numPreds);
 		reset(h_pp, numPreds);
 //		reset(pp, numPreds);
-		CHECK(cudaMemcpy(h_pp->state, d_state, sizeof(State), cudaMemcpyHostToDevice));
-		CHECK(cudaMemcpy(h_pp->world, d_world, sizeof(Gridworld), cudaMemcpyHostToDevice));
+		CHECK(cudaMemcpy(d_state, h_pp->state, sizeof(State), cudaMemcpyHostToDevice));
+		CHECK(cudaMemcpy(d_world, h_pp->world,  sizeof(Gridworld), cudaMemcpyHostToDevice));
 		//setup for kernel evaluation
 //		int inplen = getTotalInputs(teams[0][0]);
-		int inplen = (teams[0].teams[0].numInputs);
+		int inplen = (teams[0].team.numInputs);
 //		int outlen = getTotalOutputs(teams[0][0]);
-		int outlen = (teams[0].teams[0].numOutputs);
+		int outlen = (teams[0].team.numOutputs);
 		double* input;
 		CHECK(cudaMallocManaged(&input, inplen * sizeof(double)));
 		double* output;
 		CHECK(cudaMallocManaged(&output, outlen * sizeof(double)));
 
 		//evaluate teams
+		testKernel<<<1, 100>>>(d_teams);
 //		runEvaluationsParallel<<<blocks, threadsPerBlock>>>(d_state, d_world, d_teams, numPreds, input, output, inplen, outlen, trialsPerEval, sim, numTrials);
 //		feedForward* t = evaluate(*pp, team, numPreds);
 
+//		cudaDeviceSynchronize();
 		//send memory back
-		numBytes = numTrials * (numPreds * sizeof(feedForward));
+		numBytes = numTrials * sizeof(team);
 		CHECK(cudaMemcpy(teams, d_teams, numBytes, cudaMemcpyDeviceToHost));
 		for(int t = 0;t<numTrials;t++){
-			numBytes = numPreds * sizeof(feedForward);
-			CHECK(cudaMemcpy(h_team, d_teams[t].teams, numBytes, cudaMemcpyDeviceToHost));
+			CHECK(cudaMemcpy(&teams[t].team, &d_teams[t].team, sizeof(team), cudaMemcpyDeviceToHost));
+			CHECK(cudaMemcpy(&teams[t].team.t1, &d_teams[t].team.t1, sizeof(teams[t].team.t1), cudaMemcpyDeviceToHost));
+			CHECK(cudaMemcpy(&teams[t].team.t2, &d_teams[t].team.t2, sizeof(teams[t].team.t2), cudaMemcpyDeviceToHost));
+			CHECK(cudaMemcpy(&teams[t].team.t3, &d_teams[t].team.t3, sizeof(teams[t].team.t3), cudaMemcpyDeviceToHost));
+			CHECK(cudaMemcpy(&teams[t].team.act1, &d_teams[t].team.act1, sizeof(teams[t].team.act1), cudaMemcpyDeviceToHost));
+			CHECK(cudaMemcpy(&teams[t].team.act2, &d_teams[t].team.act2, sizeof(teams[t].team.act2), cudaMemcpyDeviceToHost));
+			CHECK(cudaMemcpy(&teams[t].team.act3, &d_teams[t].team.act3, sizeof(teams[t].team.act3), cudaMemcpyDeviceToHost));
+
 		}
-		cudaDeviceSynchronize();
+//		for(int t = 0;t<numTrials;t++){
+//			numBytes = sizeof(team);
+//			CHECK(cudaMemcpy(h_team, d_teams[t].team, numBytes, cudaMemcpyDeviceToHost));
+//		}
 		//assign team scores
 		//TODO: loop through all teams
 		for(int n = 0; n < numTrials;n++){
-			catches = catches + (teams[n].teams[0].catches);
+			catches = catches + (teams[n].team.catches);
 			if(bestFitness == 0 && !teamfound){
-				bestFitness = (teams[n].teams[0].fitness);
+				bestFitness = (teams[n].team.fitness);
 			}
 
-			printf("best fitness %d\n", bestFitness);
+//			printf("best fitness %d\n", bestFitness);
 	//			printf("this team fitness: %d\n", getFitness(t[0]));
 
 			//keep track of the best performing team
-			if((teams[n].teams[0].fitness) > bestFitness){
-				bestFitness = (teams[n].teams[0].fitness);
-				bestGene = teams[n].teams[0].numInputs + teams[n].teams[0].numOutputs;
+			if((teams[n].team.fitness) > bestFitness){
+				bestFitness = (teams[n].team.fitness);
+				bestGene = teams[n].team.numInputs + teams[n].team.numOutputs;
 //				double* bestActivation = new double[teams[n].teams[0].numHidden];
 //				Neuron* bestNeurons = new Neuron[teams[n].teams[0].numHidden];
 //				for(int i = 0;i<teams[n].teams[0].numHidden;i++){
@@ -523,7 +558,7 @@ int main(int argc, char **argv)
 //				bestTeam[0].Trials = teams[n].teams[0].Trials;
 //				bestTeam[0].bias = teams[n].teams[0].bias;
 //				bestTeam[0].name = teams[n].teams[0].name;
-				bestTeam = teams[n].teams[0].t1;
+				bestTeam = teams[n].team.t1;
 //				bestTeam[0].Activation=bestActivation;
 //				bestTeam[0].HiddenUnits = bestNeurons;
 				//tag best team neurons
@@ -534,8 +569,8 @@ int main(int argc, char **argv)
 			//if this is the first run, take the team as the baseline best team
 			if(!teamfound){
 				teamfound = true;
-				bestFitness = (teams[n].teams[0].fitness);
-				bestGene = teams[n].teams[0].numInputs + teams[n].teams[0].numOutputs;
+				bestFitness = (teams[n].team.fitness);
+				bestGene = teams[n].team.numInputs + teams[n].team.numOutputs;
 //				double* bestActivation = new double[teams[n].teams[0].numHidden];
 //				Neuron* bestNeurons = new Neuron[teams[n].teams[0].numHidden];
 //				for(int i = 0;i<teams[n].teams[0].numHidden;i++){
@@ -554,7 +589,7 @@ int main(int argc, char **argv)
 //				bestTeam[0].Trials = teams[n].teams[0].Trials;
 //				bestTeam[0].bias = teams[n].teams[0].bias;
 //				bestTeam[0].name = teams[n].teams[0].name;
-				bestTeam = teams[n].teams[0].t1;
+				bestTeam = teams[n].team.t1;
 //				bestTeam[0].Activation = teams[n].teams[0].Activation;
 //				bestTeam[0].HiddenUnits = *bestNeurons;
 			}

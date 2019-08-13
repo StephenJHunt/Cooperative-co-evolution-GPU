@@ -99,10 +99,11 @@ Neuron* getHiddenUnits(feedForward f){
 }
 
 
-void Create(feedForward f, Population* p, int numPops){
+feedForward Create(feedForward f, Population* p, int numPops){
 	for(int i = 0; i < numPops;i++){
 		f.HiddenUnits[i] = selectNeuron(p[i]);
 	}
+	return f;
 }
 
 __device__ void kernelCreate(feedForward f, Population* p, int numPops){
