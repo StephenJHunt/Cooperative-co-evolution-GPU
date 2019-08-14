@@ -500,9 +500,6 @@ int main(int argc, char **argv)
 				bestGene = teams[n].team.numInputs + teams[n].team.numOutputs;
 				bestTeam = teams[n].team.t1;
 			}
-			cudaFree(d_teams);
-			cudaFree(d_state);
-			cudaFree(d_world);
 		}
 
 		printf("Generation %d, best fitness is %d, catches is %d\n", generations+1, bestFitness, catches);
@@ -519,9 +516,6 @@ int main(int argc, char **argv)
 					for(int n = 0; n< numIndivs;n++){
 						Neuron indiv = subpop.Individuals[n];
 						Neuron* hid = bestTeam;
-//						if(n ==19){
-//							n = 19;
-//						}
 						subpop.Individuals[n] = perturb(indiv, hid[i], bestGene);
 					}
 				}
