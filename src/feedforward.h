@@ -20,6 +20,20 @@
 #include "neuron.h"
 #include "sigmoid.h"
 
+struct aTeam{
+	int numOutputs;
+	int numInputs;
+	double act1[15];
+	Neuron t1[15];
+	double act2[15];
+	Neuron t2[15];
+	double act3[15];
+	Neuron t3[15];
+	int fitness;
+	int numHidden;
+	int catches;
+};
+
 struct feedForward {
 	int ID;
 //	double* Activation;
@@ -74,20 +88,28 @@ feedForward* newFeedForward(int in, int hid, int out, bool bias){
 	return ff;
 }
 
-__device__ double* Activate(feedForward f, double* input, int inputLen, double* output){
-	for(int key = 0; key< f.numHidden;key++){
-		Neuron n = f.HiddenUnits[key];
-		if(!n.Lesioned){
-			for(int i = 0; i< inputLen;i++){
-				f.Activation[key] = f.Activation[key] + (n.Weight[i] * input[i]);
-			}
-			f.Activation[key] = Logistic(1.0, f.Activation[key]);
+__device__ double* Activate(aTeam t, double* input, int inputLen, double* output){
+	for(int key = 0; key< t.numHidden;key++){
+		Neuron n1 = t.t1[key];
+		Neuron n2 = t.t2[key];
+		Neuron n3 = t.t3[key];
+		for(int i = 0; i< inputLen;i++){
+			t.act1[key] = t.act1[key] + (n1.Weight[i] * input[i]);
+			t.act2[key] = t.act2[key] + (n2.Weight[i] * input[i]);
+			t.act3[key] = t.act3[key] + (n3.Weight[i] * input[i]);
 		}
+		t.act1[key] = Logistic(1.0, t.act1[key]);
+		t.act2[key] = Logistic(1.0, t.act2[key]);
+		t.act3[key] = Logistic(1.0, t.act3[key]);
 	}
-	for(int i=0;i<f.NumOutputs;i++){
-		for(int key = 0; key<f.numHidden; key++){
-			Neuron n = f.HiddenUnits[key];
-			output[i] = output[i] + (f.Activation[key] * n.Weight[inputLen + i]);
+	for(int i=0;i<t.numOutputs;i++){
+		for(int key = 0; key<t.numHidden; key++){
+			Neuron n1 = t.t1[key];
+			Neuron n2 = t.t2[key];
+			Neuron n3 = t.t3[key];
+			output[i] = output[i] + (t.act1[key] * n1.Weight[inputLen + i]);
+			output[i] = output[i] + (t.act2[key] * n2.Weight[inputLen + i]);
+			output[i] = output[i] + (t.act3[key] * n3.Weight[inputLen + i]);
 		}
 //		output[i] = Direction((double)output[i]);//call different
 	}
