@@ -250,16 +250,16 @@ feedForward* evaluate(PredatorPrey e, feedForward* team, int numTeams){
 }
 */
 
-__global__ void runEvaluationsParallel(State* statepntr, Gridworld* worldpntr, teamArr* teams, int numPreds, double* input, double* output, int inplen, int outlen, int trialsPerEval, bool sim, int numTrials){
+__global__ void runEvaluationsParallel(State* statepntr, Gridworld* worldpntr, teamArr* d_teams, int numPreds, double* input, double* output, int inplen, int outlen, int trialsPerEval, bool sim, int numTrials){
 	int index = threadIdx.x + blockIdx.x * blockDim.x;
 	int stride = blockDim.x * gridDim.x;
-
+//
 	for(int i = index;i < numTrials;i+= stride){
 		int catches = 0;
 		int total_fitness = 0;
-
+//
 		int PreyPositions[2][9] = {{16, 50, 82, 82, 82, 16, 50, 50, 82},{50, 50, 50, 82, 16, 50, 16, 82, 50}};
-
+//
 		for(int l = 0;l < trialsPerEval;l++){//parallel?
 			int fitness =0;
 			int steps = 0;
@@ -299,8 +299,8 @@ __global__ void runEvaluationsParallel(State* statepntr, Gridworld* worldpntr, t
 					input[1] = double(statepntr->PreyY);
 					delete[] output;
 					output = new double[outlen];
-					double* out = Activate(teams[i].team, input, inplen, output);
-					PerformPredatorAction(statepntr, worldpntr, pred, out, teams[i].team.numOutputs);//change to use state?
+					double* out = Activate(d_teams[i].team, input, inplen, output);
+					PerformPredatorAction(statepntr, worldpntr, pred, out, d_teams[i].team.numOutputs);//change to use state?
 				}
 				steps++;
 			}
@@ -325,26 +325,24 @@ __global__ void runEvaluationsParallel(State* statepntr, Gridworld* worldpntr, t
 			total_fitness = total_fitness + fitness;
 		}
 
-		teams[i].team.fitness = total_fitness; // /trialsPerEval
-		teams[i].team.catches = catches;
+		d_teams[i].team.fitness = total_fitness; // /trialsPerEval
+		d_teams[i].team.catches = catches;
 
-		for(int i2 = 0; i2<teams[i].team.numHidden;i2++){
-			Neuron n1 = teams[i].team.t1[i2];
-			Neuron n2 = teams[i].team.t2[i2];
-			Neuron n3 = teams[i].team.t3[i2];
-			n1.Fitness = teams[i].team.fitness;
-			n2.Fitness = teams[i].team.fitness;
-			n3.Fitness = teams[i].team.fitness;
+		for(int i2 = 0; i2<d_teams[i].team.numHidden;i2++){
+			Neuron n1 = d_teams[i].team.t1[i2];
+			Neuron n2 = d_teams[i].team.t2[i2];
+			Neuron n3 = d_teams[i].team.t3[i2];
+			n1.Fitness = d_teams[i].team.fitness;
+			n2.Fitness = d_teams[i].team.fitness;
+			n3.Fitness = d_teams[i].team.fitness;
 			n1.Trials++;
 			n2.Trials++;
 			n3.Trials++;
-			teams[i].team.t1[i2] = n1;
-			teams[i].team.t2[i2] = n2;
-			teams[i].team.t3[i2] = n3;
+			d_teams[i].team.t1[i2] = n1;
+			d_teams[i].team.t2[i2] = n2;
+			d_teams[i].team.t3[i2] = n3;
 		}
-//		printf("Team %d's fitness: %d\n",i , teams[i][0].Fitness);
 	}
-//	return team;
 }
 
 void CHECK(cudaError_t err){
@@ -354,8 +352,10 @@ void CHECK(cudaError_t err){
 }
 
 
-__global__ void testKernel(teamArr* teams){
+__global__ void testKernel(teamArr* teams, double* input, int inplen){
 	int index = threadIdx.x;
+//	input = new double[inplen];
+	input[0] = 1.0;
 //	double test = teams[index].team.t1[0].Weight[0];
 //	teams[index].team.fitness = index+1;
 	for(int i2 = 0; i2<teams[index].team.numHidden;i2++){
@@ -421,7 +421,7 @@ int main(int argc, char **argv)
 	//run simulation
 	while(generations < maxGens && catches < numTrials){//run contents of this loop in parallel
 		int numBytes = numTrials * sizeof(aTeam);
-		CHECK(cudaMalloc((void **)&d_teams, numBytes));
+		CHECK(cudaMalloc(&d_teams, numBytes));
 		teams = (teamArr*)malloc(numBytes);
 		catches = 0;
 		feedForward* ff = newFeedForward(numInputs, hidden, numOutputs, false);
@@ -451,8 +451,8 @@ int main(int argc, char **argv)
 		PredatorPrey* h_pp;
 		State* d_state;
 		Gridworld* d_world;
-		cudaMalloc(&d_state, sizeof(State));
-		cudaMalloc(&d_world, sizeof(Gridworld));
+		CHECK(cudaMalloc(&d_state, sizeof(State)));
+		CHECK(cudaMalloc(&d_world, sizeof(Gridworld)));
 		h_pp = newPredatorPrey(numPreds);
 		reset(h_pp, numPreds);
 		CHECK(cudaMemcpy(d_state, h_pp->state, sizeof(State), cudaMemcpyHostToDevice));
@@ -460,20 +460,26 @@ int main(int argc, char **argv)
 		//setup for kernel evaluation
 		int inplen = (teams[0].team.numInputs);
 		int outlen = (teams[0].team.numOutputs);
-		double* input;
-		CHECK(cudaMallocManaged(&input, inplen * sizeof(double)));
-		double* output;
-		CHECK(cudaMallocManaged(&output, outlen * sizeof(double)));
+		double* d_input;
+		double* h_input;
+		CHECK(cudaMalloc(&d_input, inplen * sizeof(double)));
+		h_input = (double*)malloc(inplen * sizeof(double));
+		double* d_output;
+		double* h_output;
+		CHECK(cudaMalloc(&d_output, outlen * sizeof(double)));
+		h_output = (double*)malloc(outlen * sizeof(double));
 
 		//evaluate teams
-		testKernel<<<1, 100>>>(d_teams);
-//		runEvaluationsParallel<<<blocks, threadsPerBlock>>>(d_state, d_world, d_teams, numPreds, input, output, inplen, outlen, trialsPerEval, sim, numTrials);
+//		testKernel<<<1, 100>>>(d_teams, d_input, inplen);
+		runEvaluationsParallel<<<blocks, threadsPerBlock>>>(d_state, d_world, d_teams, numPreds, d_input, d_output, inplen, outlen, trialsPerEval, sim, numTrials);
 //		feedForward* t = evaluate(*pp, team, numPreds);
-
+		CHECK(cudaPeekAtLastError());
 		cudaDeviceSynchronize();
 		//send memory back
 		numBytes = numTrials * sizeof(aTeam);
 		CHECK(cudaMemcpy(teams, d_teams, numBytes, cudaMemcpyDeviceToHost));
+		CHECK(cudaMemcpy(h_output, d_output, outlen * sizeof(double), cudaMemcpyDeviceToHost));
+		CHECK(cudaMemcpy(h_input, d_input, inplen * sizeof(double), cudaMemcpyDeviceToHost));
 
 		//assign team scores
 		//TODO: loop through all teams
@@ -537,6 +543,10 @@ int main(int argc, char **argv)
 		free(teams);
 		CHECK(cudaFree(d_state));
 		CHECK(cudaFree(d_world));
+		CHECK(cudaFree(d_input));
+		CHECK(cudaFree(d_output));
+		free(h_input);
+		free(h_output);
 
 	}
 }
