@@ -173,8 +173,11 @@ teamArr* h_eval(Gridworld* h_worldpntr, teamArr* h_teams, int h_numPreds, double
 			for(int p = 0;p<h_numPreds;p++){
 				h_input[0] = double(h_statepntr->PreyX);
 				h_input[1] = double(h_statepntr->PreyY);
-				delete[] h_output;
-				h_output = new double[h_outlen];
+//				delete[] h_output;
+				for(int o=0;o<h_outlen;o++){
+					h_output[o] = 0;
+				}
+//				h_output = new double[h_outlen];
 				double* out = h_Activate(&h_teams[i].team, h_input, h_inplen, h_output);
 				h_PerformPredatorAction(h_statepntr, h_worldpntr, p, out, h_teams[i].team.numOutputs);
 			}
@@ -216,7 +219,7 @@ teamArr* h_eval(Gridworld* h_worldpntr, teamArr* h_teams, int h_numPreds, double
 
 	return h_teams;
 }
-
+/*
 __global__ void runEvaluationsParallel(Gridworld* worldpntr, teamArr* d_teams, int numPreds, double* input, double* output, int inplen, int outlen, int trialsPerEval, bool sim, int numTrials){
 	int index = threadIdx.x + blockIdx.x * blockDim.x;
 	int stride = blockDim.x * gridDim.x;
@@ -313,7 +316,7 @@ __global__ void runEvaluationsParallel(Gridworld* worldpntr, teamArr* d_teams, i
 		}
 	}
 }
-
+*/
 void CHECK(cudaError_t err){
 	if(err){
 		printf("Error in %s at line %d: %s\n", __FILE__, __LINE__, cudaGetErrorString(err));
@@ -440,7 +443,7 @@ int main(int argc, char **argv)
 		//evaluate teams
 //		testKernel<<<1, 100>>>(d_teams, d_input, inplen);
 		// blocks, threadsPerBlock
-		teams = h_eval(d_world, d_teams, numPreds, d_input, d_output, inplen, outlen, trialsPerEval, sim, numTrials);
+		teams = h_eval(h_pp->world, teams, numPreds, h_input, h_output, inplen, outlen, trialsPerEval, sim, numTrials);
 //		runEvaluationsParallel<<<blocks, threadsPerBlock>>>(d_world, d_teams, numPreds, d_input, d_output, inplen, outlen, trialsPerEval, sim, numTrials);
 //		feedForward* t = evaluate(*pp, team, numPreds);
 		CHECK(cudaPeekAtLastError());
