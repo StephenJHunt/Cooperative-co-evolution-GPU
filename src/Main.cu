@@ -279,6 +279,22 @@ teamArr* h_eval(Gridworld* h_worldpntr, teamArr* h_teams, int h_numPreds, double
 		int h_nearestPred = 0;
 		int h_currentDist = 0;
 
+		for(int p = 0;p<h_numPreds;p++){
+			h_avg_init_dist += h_calculateDistance(h_worldpntr, h_state.PredatorX[p], h_state.PredatorY[p], h_state.PreyX, h_state.PreyY);
+		}
+		h_avg_init_dist = h_avg_init_dist/h_numPreds;
+
+		while(!h_Caught(h_statepntr) && h_steps < h_maxSteps){
+			for(int p=0;p<h_numPreds;p++){
+				h_currentDist = h_calculateDistance(h_worldpntr, h_state.PredatorX[p], h_state.PredatorY[p], h_state.PreyX, h_state.PreyY);
+				if(h_currentDist<h_nearestDist){
+					h_nearestDist = h_currentDist;
+					h_nearestPred = p;
+				}
+			}
+
+			h_PerformPreyAction(h_statepntr, h_worldpntr, h_nearestPred);
+		}
 
 	}
 	return h_teams;

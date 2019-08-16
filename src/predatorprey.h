@@ -170,6 +170,58 @@ __device__ void PerformPredatorAction(State* state, Gridworld* world, int pos, d
 	}
 }
 
+void h_PerformPreyAction(State* h_state, Gridworld* h_world, int h_nearest){
+	double h_xDistance = (double)(h_state->PredatorX[h_nearest] - h_state->PreyX);
+	if(abs(h_xDistance) > (double)(h_world->length/2)){
+		double h_temp = h_xDistance;
+		h_xDistance = (double)(h_world->length - abs(h_xDistance));
+		if(h_temp > 0){
+			h_xDistance = 0- h_xDistance;
+		}
+	}
+
+	double h_yDistance = (double)(h_state->PredatorY[h_nearest] - h_state->PreyY);
+	if(abs(h_yDistance) > (double)(h_world->height/2)){
+		double h_temp = h_yDistance;
+		h_yDistance = (double)(h_world->height - abs(h_yDistance));
+		if(h_temp > 0){
+			h_yDistance = 0- h_yDistance;
+		}
+	}
+
+	//NESW movement
+	if(h_yDistance < 0 && (abs((double)(h_yDistance)) >= abs((double)h_xDistance))){
+		h_state->PreyY++;
+	}
+	else if(h_xDistance < 0 && (abs((double)h_xDistance) >= abs((double)h_yDistance))){
+		h_state->PreyX++;
+	}
+	else if(h_yDistance > 0 && (abs((double)(h_yDistance)) >= abs((double)h_xDistance))){
+		h_state->PreyY--;
+	}
+	else if(h_xDistance > 0 && (abs((double)(h_xDistance)) >= abs((double)h_yDistance))){
+		h_state->PreyX--;
+	}
+
+	if(h_state->PreyX >= h_world->length){
+		h_state->PreyX = h_state->PreyX - h_world->length;
+//		pp.state->PreyX = pp.state->PreyX -1;
+	}
+	if(h_state->PreyY >= h_world->height){
+		h_state->PreyY = h_state->PreyY - h_world->height;
+//		pp.state->PreyY = pp.state->PreyY-1;
+	}
+	if(h_state->PreyX < 0){
+		h_state->PreyX = h_state->PreyX + h_world->length;
+//		pp.state->PreyX = pp.state->PreyX+1;
+	}
+	if(h_state->PreyY < 0){
+		h_state->PreyY = h_state->PreyY + h_world->height;
+//		pp.state->PreyY = pp.state->PreyY+1;
+	}
+
+}
+
 __device__ void PerformPreyAction(State* state, Gridworld* world, int nearest){
 	double xDistance = (double)(state->PredatorX[nearest] - state->PreyX);
 	if(abs(xDistance) > (double)(world->length/2)){
@@ -228,6 +280,10 @@ State* getState(PredatorPrey pp){
 
 Gridworld* getWorld(PredatorPrey pp){
 	return pp.world;
+}
+
+bool h_Caught(State* h_state){
+	return h_state->Caught;
 }
 
 __device__ bool Caught(State* state){
