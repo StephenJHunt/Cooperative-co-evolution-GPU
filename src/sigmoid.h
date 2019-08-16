@@ -1,6 +1,5 @@
 #ifndef SIGMOID_H_
 #define SIGMOID_H_
-
 // includes, system
 #include <stdlib.h>
 #include <stdio.h>

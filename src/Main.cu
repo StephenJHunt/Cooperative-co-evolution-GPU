@@ -1,19 +1,3 @@
-////////////////////////////////////////////////////////////////////////////
-//
-// Copyright 1993-2015 NVIDIA Corporation.  All rights reserved.
-//
-// Please refer to the NVIDIA end user license agreement (EULA) associated
-// with this source code for terms and conditions that govern your use of
-// this software. Any use, reproduction, disclosure, or distribution of
-// this software and related documentation outside the terms of the EULA
-// is strictly prohibited.
-//
-////////////////////////////////////////////////////////////////////////////
-
-/* Template project which demonstrates the basics on how to setup a project
-* example application.
-* Host code.
-*/
 
 // includes, system
 #include <stdlib.h>
@@ -38,15 +22,17 @@
 #include "feedforward.h"
 #include "population.h"
 
-////////////////////////////////////////////////////////////////////////////////
-// Program main
-////////////////////////////////////////////////////////////////////////////////
-
+#ifndef nPreds
+#define nPreds = 3
+#endif
+#ifndef nHidden
+#define nHidden = 15
+#endif
 //globals
 Neuron* bestTeam;
 int bestGene;
 Population* subPops;
-Population** predSubPops;//Population** ?
+Population** predSubPops;
 Gridworld world;
 int catches;
 
@@ -96,6 +82,22 @@ Population* init(int hid, int num, int genes){
 		pops[i] = *p;
 	}
 	return pops;
+}
+
+int h_calculateDistance(Gridworld* h_world, int h_predX, int h_predY, int h_preyX, int h_preyY){
+	double h_xDist = 0;
+	double h_yDist = 0;
+
+	h_xDist = abs((double)(h_predX-h_preyX));
+	if(h_xDist > double(h_world->length/2)){
+		h_xDist = double(h_world->length) - h_xDist;
+	}
+
+	h_yDist = abs((double)(h_predY-h_preyY));
+		if(h_yDist > double(h_world->height/2)){
+			h_yDist = double(h_world->height) - h_yDist;
+		}
+	return int(h_xDist + h_yDist);
 }
 
 __device__ int calculateDistance(Gridworld* world, int predX, int predY, int preyX ,int preyY){
@@ -250,6 +252,38 @@ feedForward* evaluate(PredatorPrey e, feedForward* team, int numTeams){
 }
 */
 
+teamArr* h_eval(Gridworld* h_worldpntr, teamArr* h_teams, int h_numPreds, double* h_input, double* h_output, int h_inplen, int h_outlen, int h_trialsPerEval, bool h_sim, int h_numTrials){
+	State* h_statepntr = new State();
+	h_reset(h_statepntr, h_numPreds);
+
+	int h_catches = 0;
+	int h_totalfitness = 0;
+
+	int h_PreyPositions[2][9] = {{16, 50, 82, 82, 82, 16, 50, 50, 82},{50, 50, 50, 82, 16, 50, 16, 82, 50}};
+
+	for(int i=0;i<h_trialsPerEval;i++){
+		int h_fitness = 0;
+		int h_steps = 0;
+		int h_maxSteps = 150;
+		int h_avg_init_dist = 0;
+		int h_avg_final_dist = 0;
+
+		State h_state;
+		Gridworld h_world;
+
+		h_setPreyPosition(h_statepntr, h_PreyPositions[0][i], h_PreyPositions[1][i]);
+		h_state = *h_statepntr;
+		h_world = *h_worldpntr;
+
+		int h_nearestDist = 100;
+		int h_nearestPred = 0;
+		int h_currentDist = 0;
+
+
+	}
+	return h_teams;
+}
+
 __global__ void runEvaluationsParallel(Gridworld* worldpntr, teamArr* d_teams, int numPreds, double* input, double* output, int inplen, int outlen, int trialsPerEval, bool sim, int numTrials){
 	int index = threadIdx.x + blockIdx.x * blockDim.x;
 	int stride = blockDim.x * gridDim.x;
@@ -276,7 +310,7 @@ __global__ void runEvaluationsParallel(Gridworld* worldpntr, teamArr* d_teams, i
 			state = *statepntr;
 			world = *worldpntr;
 
-			int nearestDist = 0;
+			int nearestDist = 100;//so that closest pred changes
 			int nearestPred = 0;
 			int currentDist = 0;
 
@@ -422,9 +456,9 @@ int main(int argc, char **argv)
 
 	//run simulation
 	while(generations < maxGens && catches < numTrials){//run contents of this loop in parallel
-		int numBytes = numTrials * sizeof(aTeam);
-		CHECK(cudaMalloc(&d_teams, numBytes));
-		teams = (teamArr*)malloc(numBytes);
+		int numTeamBytes = numTrials * sizeof(aTeam);
+		CHECK(cudaMalloc(&d_teams, numTeamBytes));
+		teams = (teamArr*)malloc(numTeamBytes);
 		catches = 0;
 		feedForward* ff = newFeedForward(numInputs, hidden, numOutputs, false);
 		for(int t = 0; t < numTrials;t++){
@@ -447,8 +481,7 @@ int main(int argc, char **argv)
 			tm.numOutputs = ff->NumOutputs;
 			teams[t].team = tm;
 		}
-		numBytes = numTrials * sizeof(aTeam);
-		CHECK(cudaMemcpy(d_teams, teams, numBytes, cudaMemcpyHostToDevice));//State is causing the issue
+		CHECK(cudaMemcpy(d_teams, teams, numTeamBytes, cudaMemcpyHostToDevice));//State is causing the issue
 
 		PredatorPrey* h_pp;
 //		State* d_state;
@@ -474,13 +507,12 @@ int main(int argc, char **argv)
 		//evaluate teams
 //		testKernel<<<1, 100>>>(d_teams, d_input, inplen);
 		// blocks, threadsPerBlock
-		runEvaluationsParallel<<<blocks, threadsPerBlock>>>(d_world, d_teams, numPreds, d_input, d_output, inplen, outlen, trialsPerEval, sim, numTrials);
+//		runEvaluationsParallel<<<blocks, threadsPerBlock>>>(d_world, d_teams, numPreds, d_input, d_output, inplen, outlen, trialsPerEval, sim, numTrials);
 //		feedForward* t = evaluate(*pp, team, numPreds);
 		CHECK(cudaPeekAtLastError());
 //		cudaDeviceSynchronize();
 		//send memory back
-		numBytes = numTrials * sizeof(aTeam);
-		CHECK(cudaMemcpy(teams, d_teams, numBytes, cudaMemcpyDeviceToHost));
+		CHECK(cudaMemcpy(teams, d_teams, numTeamBytes, cudaMemcpyDeviceToHost));
 		CHECK(cudaMemcpy(h_output, d_output, outlen * sizeof(double), cudaMemcpyDeviceToHost));
 		CHECK(cudaMemcpy(h_input, d_input, inplen * sizeof(double), cudaMemcpyDeviceToHost));
 

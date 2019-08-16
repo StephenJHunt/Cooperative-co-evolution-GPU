@@ -1,6 +1,11 @@
 #ifndef POPULATION_H_
 #define POPULATION_H_
-
+#ifndef nPreds
+#define nPreds = 3
+#endif
+#ifndef nHidden
+#define nHidden = 15
+#endif
 // includes, system
 #include <stdlib.h>
 #include <stdio.h>

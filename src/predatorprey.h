@@ -1,6 +1,11 @@
 #ifndef PREDATORPREY_H_
 #define PREDATORPREY_H_
-
+#ifndef nPreds
+#define nPreds = 3
+#endif
+#ifndef nHidden
+#define nHidden = 15
+#endif
 // includes, system
 #include <stdlib.h>
 #include <stdio.h>
@@ -37,6 +42,14 @@ void reset(PredatorPrey* pp, int n){
 	}
 	pp->state->Caught = false;
 }
+void h_reset(State* h_st, int h_n){
+	for(int i = 0;i<h_n;i++){
+		if(i>0)h_st->PredatorX[i] = (i*2)-1;
+		else h_st->PredatorX[i] = 0;
+		h_st->PredatorY[i]=0;
+	}
+	h_st->Caught = false;
+}
 
 __device__ void kernelReset(State* st, int n){
 	for(int i = 0;i<n;i++){
@@ -45,6 +58,11 @@ __device__ void kernelReset(State* st, int n){
 		st->PredatorY[i]=0;
 	}
 	st->Caught = false;
+}
+
+void h_setPreyPosition(State* h_state, int x, int y){
+	h_state->PreyX = x;
+	h_state->PreyY = y;
 }
 
 __device__ void setPreyPosition(State* state,int x, int y){

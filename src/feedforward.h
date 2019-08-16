@@ -7,7 +7,12 @@
 
 #ifndef FEEDFORWARD_H_
 #define FEEDFORWARD_H_
-
+#ifndef nPreds
+#define nPreds = 3
+#endif
+#ifndef nHidden
+#define nHidden = 15
+#endif
 // includes, system
 #include <stdlib.h>
 #include <stdio.h>
@@ -86,6 +91,10 @@ feedForward* newFeedForward(int in, int hid, int out, bool bias){
 	ff->name="Feed Forward";
 	ff->numHidden=hid;
 	return ff;
+}
+
+double* h_Activate(aTeam h_t, double* h_input, int h_inputLen, double* h_output){
+	return h_output;
 }
 
 __device__ double* Activate(aTeam* t, double* input, int inputLen, double* output){
