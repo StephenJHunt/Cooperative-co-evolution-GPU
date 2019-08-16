@@ -250,9 +250,11 @@ feedForward* evaluate(PredatorPrey e, feedForward* team, int numTeams){
 }
 */
 
-__global__ void runEvaluationsParallel(State* statepntr, Gridworld* worldpntr, teamArr* d_teams, int numPreds, double* input, double* output, int inplen, int outlen, int trialsPerEval, bool sim, int numTrials){
+__global__ void runEvaluationsParallel(Gridworld* worldpntr, teamArr* d_teams, int numPreds, double* input, double* output, int inplen, int outlen, int trialsPerEval, bool sim, int numTrials){
 	int index = threadIdx.x + blockIdx.x * blockDim.x;
 	int stride = blockDim.x * gridDim.x;
+	State* statepntr = new State();
+	kernelReset(statepntr, numPreds);
 //
 	for(int i = index;i < numTrials;i+= stride){
 		int catches = 0;
@@ -299,7 +301,7 @@ __global__ void runEvaluationsParallel(State* statepntr, Gridworld* worldpntr, t
 					input[1] = double(statepntr->PreyY);
 					delete[] output;
 					output = new double[outlen];
-					double* out = Activate(d_teams[i].team, input, inplen, output);
+					double* out = Activate(&d_teams[i].team, input, inplen, output);
 					PerformPredatorAction(statepntr, worldpntr, pred, out, d_teams[i].team.numOutputs);//change to use state?
 				}
 				steps++;
@@ -307,12 +309,12 @@ __global__ void runEvaluationsParallel(State* statepntr, Gridworld* worldpntr, t
 			if(Caught(statepntr)){
 				if(sim == true){
 					printf("Simulation Complete\n");
-					printf("Predator at position %d, %d caught the prey at position %d, %d after %d steps", state.PredatorX[nearestPred], state.PredatorY[nearestPred], state.PreyX, state.PreyY, steps);
+					printf("Predator at position %d, %d caught the prey at position %d, %d after %d steps", statepntr->PredatorX[nearestPred], statepntr->PredatorY[nearestPred], statepntr->PreyX, statepntr->PreyY, steps);
 				}
 			}
 
 			for(int p = 0; p < numPreds;p++){
-				avg_final_dist = avg_final_dist + calculateDistance(worldpntr, state.PredatorX[p], state.PredatorY[p], state.PreyX, state.PreyY);
+				avg_final_dist = avg_final_dist + calculateDistance(worldpntr, statepntr->PredatorX[p], statepntr->PredatorY[p], statepntr->PreyX, statepntr->PreyY);
 			}
 			avg_final_dist = avg_final_dist/numPreds;
 
@@ -446,16 +448,16 @@ int main(int argc, char **argv)
 			teams[t].team = tm;
 		}
 		numBytes = numTrials * sizeof(aTeam);
-		CHECK(cudaMemcpy(d_teams, teams, numBytes, cudaMemcpyHostToDevice));
+		CHECK(cudaMemcpy(d_teams, teams, numBytes, cudaMemcpyHostToDevice));//State is causing the issue
 
 		PredatorPrey* h_pp;
-		State* d_state;
+//		State* d_state;
 		Gridworld* d_world;
-		CHECK(cudaMalloc(&d_state, sizeof(State)));
+//		CHECK(cudaMalloc(&d_state, sizeof(State)));
 		CHECK(cudaMalloc(&d_world, sizeof(Gridworld)));
 		h_pp = newPredatorPrey(numPreds);
 		reset(h_pp, numPreds);
-		CHECK(cudaMemcpy(d_state, h_pp->state, sizeof(State), cudaMemcpyHostToDevice));
+//		CHECK(cudaMemcpy(d_state, h_pp->state, sizeof(State), cudaMemcpyHostToDevice));
 		CHECK(cudaMemcpy(d_world, h_pp->world,  sizeof(Gridworld), cudaMemcpyHostToDevice));
 		//setup for kernel evaluation
 		int inplen = (teams[0].team.numInputs);
@@ -471,10 +473,11 @@ int main(int argc, char **argv)
 
 		//evaluate teams
 //		testKernel<<<1, 100>>>(d_teams, d_input, inplen);
-		runEvaluationsParallel<<<blocks, threadsPerBlock>>>(d_state, d_world, d_teams, numPreds, d_input, d_output, inplen, outlen, trialsPerEval, sim, numTrials);
+		// blocks, threadsPerBlock
+		runEvaluationsParallel<<<blocks, threadsPerBlock>>>(d_world, d_teams, numPreds, d_input, d_output, inplen, outlen, trialsPerEval, sim, numTrials);
 //		feedForward* t = evaluate(*pp, team, numPreds);
 		CHECK(cudaPeekAtLastError());
-		cudaDeviceSynchronize();
+//		cudaDeviceSynchronize();
 		//send memory back
 		numBytes = numTrials * sizeof(aTeam);
 		CHECK(cudaMemcpy(teams, d_teams, numBytes, cudaMemcpyDeviceToHost));
@@ -541,7 +544,7 @@ int main(int argc, char **argv)
 		generations++;
 		CHECK(cudaFree(d_teams));
 		free(teams);
-		CHECK(cudaFree(d_state));
+//		CHECK(cudaFree(d_state));
 		CHECK(cudaFree(d_world));
 		CHECK(cudaFree(d_input));
 		CHECK(cudaFree(d_output));

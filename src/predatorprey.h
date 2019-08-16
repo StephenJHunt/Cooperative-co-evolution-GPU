@@ -19,7 +19,7 @@ struct PredatorPrey{
 };
 
 PredatorPrey* newPredatorPrey(int numPreds){
-	State* st = new State{new int[numPreds], new int[numPreds], 0, 0};
+	State* st = new State{{0,0,0}, {0,0,0}, 0, 0};
 	return new PredatorPrey{"Predator Prey Task", st, new Gridworld};
 }
 
@@ -38,9 +38,14 @@ void reset(PredatorPrey* pp, int n){
 	pp->state->Caught = false;
 }
 
-//__device__ void kernelReset(PredatorPrey pp, int n){
-//
-//}
+__device__ void kernelReset(State* st, int n){
+	for(int i = 0;i<n;i++){
+		if(i>0)st->PredatorX[i] = (i*2)-1;
+		else st->PredatorX[i] = 0;
+		st->PredatorY[i]=0;
+	}
+	st->Caught = false;
+}
 
 __device__ void setPreyPosition(State* state,int x, int y){
 	state->PreyX = x;

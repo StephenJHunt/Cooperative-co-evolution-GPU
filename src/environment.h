@@ -7,8 +7,8 @@ struct Gridworld{
 };
 
 struct State{
-	int* PredatorX;
-	int* PredatorY;
+	int PredatorX[3];
+	int PredatorY[3];
 	int PreyX;
 	int PreyY;
 	bool Caught;

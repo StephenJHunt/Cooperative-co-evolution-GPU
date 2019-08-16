@@ -88,28 +88,28 @@ feedForward* newFeedForward(int in, int hid, int out, bool bias){
 	return ff;
 }
 
-__device__ double* Activate(aTeam t, double* input, int inputLen, double* output){
-	for(int key = 0; key< t.numHidden;key++){
-		Neuron n1 = t.t1[key];
-		Neuron n2 = t.t2[key];
-		Neuron n3 = t.t3[key];
+__device__ double* Activate(aTeam* t, double* input, int inputLen, double* output){
+	for(int key = 0; key< t->numHidden;key++){
+		Neuron n1 = t->t1[key];
+		Neuron n2 = t->t2[key];
+		Neuron n3 = t->t3[key];
 		for(int i = 0; i< inputLen;i++){
-			t.act1[key] = t.act1[key] + (n1.Weight[i] * input[i]);
-			t.act2[key] = t.act2[key] + (n2.Weight[i] * input[i]);
-			t.act3[key] = t.act3[key] + (n3.Weight[i] * input[i]);
+			t->act1[key] = t->act1[key] + (n1.Weight[i] * input[i]);
+			t->act2[key] = t->act2[key] + (n2.Weight[i] * input[i]);
+			t->act3[key] = t->act3[key] + (n3.Weight[i] * input[i]);
 		}
-		t.act1[key] = Logistic(1.0, t.act1[key]);
-		t.act2[key] = Logistic(1.0, t.act2[key]);
-		t.act3[key] = Logistic(1.0, t.act3[key]);
+		t->act1[key] = Logistic(1.0, t->act1[key]);
+		t->act2[key] = Logistic(1.0, t->act2[key]);
+		t->act3[key] = Logistic(1.0, t->act3[key]);
 	}
-	for(int i=0;i<t.numOutputs;i++){
-		for(int key = 0; key<t.numHidden; key++){
-			Neuron n1 = t.t1[key];
-			Neuron n2 = t.t2[key];
-			Neuron n3 = t.t3[key];
-			output[i] = output[i] + (t.act1[key] * n1.Weight[inputLen + i]);
-			output[i] = output[i] + (t.act2[key] * n2.Weight[inputLen + i]);
-			output[i] = output[i] + (t.act3[key] * n3.Weight[inputLen + i]);
+	for(int i=0;i<t->numOutputs;i++){
+		for(int key = 0; key<t->numHidden; key++){
+			Neuron n1 = t->t1[key];
+			Neuron n2 = t->t2[key];
+			Neuron n3 = t->t3[key];
+			output[i] = output[i] + (t->act1[key] * n1.Weight[inputLen + i]);
+			output[i] = output[i] + (t->act2[key] * n2.Weight[inputLen + i]);
+			output[i] = output[i] + (t->act3[key] * n3.Weight[inputLen + i]);
 		}
 //		output[i] = Direction((double)output[i]);//call different
 	}
