@@ -8,10 +8,10 @@
 #ifndef FEEDFORWARD_H_
 #define FEEDFORWARD_H_
 #ifndef nPreds
-#define nPreds = 3
+#define nPreds 3
 #endif
 #ifndef nHidden
-#define nHidden = 15
+#define nHidden 15
 #endif
 // includes, system
 #include <stdlib.h>
@@ -93,7 +93,24 @@ feedForward* newFeedForward(int in, int hid, int out, bool bias){
 	return ff;
 }
 
-double* h_Activate(aTeam h_t, double* h_input, int h_inputLen, double* h_output){
+double* h_Activate(aTeam* h_t, double* h_input, int h_inputLen, double* h_output){
+	for(int key = 0; key<h_t->numHidden;key++){
+		for(int i=0;i<h_inputLen;i++){
+			h_t->act1[key] += h_t->t1[key].Weight[i] * h_input[i];
+			h_t->act2[key] += h_t->t2[key].Weight[i] * h_input[i];
+			h_t->act3[key] += h_t->t3[key].Weight[i] * h_input[i];
+		}
+		h_t->act1[key] = h_Logistic(1.0, h_t->act1[key]);
+		h_t->act2[key] = h_Logistic(1.0, h_t->act2[key]);
+		h_t->act3[key] = h_Logistic(1.0, h_t->act3[key]);
+	}
+	for(int i=0;i<h_t->numOutputs;i++){
+		for(int key = 0;key<h_t->numHidden;key++){
+			h_output[i] += h_t->act1[key] * h_t->t1[key].Weight[h_inputLen +i];
+			h_output[i] += h_t->act2[key] * h_t->t2[key].Weight[h_inputLen +i];
+			h_output[i] += h_t->act3[key] * h_t->t3[key].Weight[h_inputLen +i];
+		}
+	}
 	return h_output;
 }
 

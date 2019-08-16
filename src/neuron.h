@@ -2,10 +2,10 @@
 #define NEURON_H_
 #endif
 #ifndef nPreds
-#define nPreds = 3
+#define nPreds 3
 #endif
 #ifndef nHidden
-#define nHidden = 15
+#define nHidden 15
 // includes, system
 #include <stdlib.h>
 #include <stdio.h>

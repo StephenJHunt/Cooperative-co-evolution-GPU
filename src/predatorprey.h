@@ -1,10 +1,10 @@
 #ifndef PREDATORPREY_H_
 #define PREDATORPREY_H_
 #ifndef nPreds
-#define nPreds = 3
+#define nPreds 3
 #endif
 #ifndef nHidden
-#define nHidden = 15
+#define nHidden 15
 #endif
 // includes, system
 #include <stdlib.h>
@@ -70,23 +70,21 @@ __device__ void setPreyPosition(State* state,int x, int y){
 	state->PreyY = y;
 }
 
+int h_getMaxPos(double* h_action, int h_actLen){
+	double h_max = 0;
+	int h_res = 0;
+	for(int i=0;i<h_actLen;i++){
+		if(h_action[i] > h_max){
+			h_max = h_action[i];
+			h_res = i;
+		}
+	}
+	return h_res;
+}
+
 __device__ int getMaxPosition(double* action, int actionlen){
  double max = 0;
  int result = 0;
-// int n = 0;
-// int e = 0;
-// int s = 0;
-// int w = 0;
-// for(int i = 0;i<actionlen;i++){
-//	 if(action[i] == 0)n++;
-//	 if(action[i] == 1)e++;
-//	 if(action[i] == 2)s++;
-//	 if(action[i] == 3)w++;
-// }
-// if(n > e && n > s && n > w)return 0;
-// if(e > n && e > s && e > w)return 1;
-// if(s > n && s > e && s > w)return 2;
-// if(w > n && w > e && w > s)return 3;
  for(int i = 0;i < actionlen-1;i++){
 	 if(action[i] > max){
 		 max = action[i];
@@ -94,6 +92,42 @@ __device__ int getMaxPosition(double* action, int actionlen){
 	 }
  }
  return result;
+}
+
+void h_PerformPredatorAction(State* h_state, Gridworld* h_world, int h_pos, double* h_action, int h_actLen){
+	int h_predAction = h_getMaxPos(h_action, h_actLen);
+	if(h_predAction == 0){
+			h_state->PredatorY[h_pos]++;
+		}
+		else if(h_predAction == 1){
+			h_state->PredatorX[h_pos]++;
+		}
+		else if(h_predAction == 2){
+			h_state->PredatorY[h_pos]--;
+		}
+		else if(h_predAction == 3){
+			h_state->PredatorX[h_pos]--;
+		}
+
+		//wrap around world
+		if(h_state->PredatorX[h_pos] >= h_world->length){
+			h_state->PredatorX[h_pos] = h_state->PredatorX[h_pos] - h_world->length;
+
+		}
+		if(h_state->PredatorY[h_pos] >= h_world->height){
+			h_state->PredatorY[h_pos] = h_state->PredatorY[h_pos] - h_world->height;
+		}
+		if(h_state->PredatorX[h_pos] < 0){
+			h_state->PredatorX[h_pos] = h_state->PredatorX[h_pos] + h_world->length;
+		}
+		if(h_state->PredatorY[h_pos] < 0){
+			h_state->PredatorY[h_pos] = h_state->PredatorY[h_pos] + h_world->height;
+		}
+
+		//is the predator at the same pos as the prey
+		if((h_state->PredatorX[h_pos] == h_state->PreyX) && (h_state->PredatorY[h_pos] == h_state->PreyY)){
+			h_state->Caught = true;
+		}
 }
 
 __device__ void PerformPredatorAction(State* state, Gridworld* world, int pos, double* action, int actionlen){
@@ -117,51 +151,15 @@ __device__ void PerformPredatorAction(State* state, Gridworld* world, int pos, d
 	if(state->PredatorX[pos] >= world->length){
 		state->PredatorX[pos] = state->PredatorX[pos] - world->length;
 
-//		pp.state->PredatorX[pos] = pp.state->PredatorX[pos]-1;
-//
-//		if(pp.state->PreyY < pp.state->PredatorY[pos]){//prey below
-//			pp.state->PredatorY[pos]--;
-//		}
-//		if(pp.state->PreyY > pp.state->PredatorY[pos]){//prey above
-//			pp.state->PredatorY[pos]++;
-//		}
-
 	}
 	if(state->PredatorY[pos] >= world->height){
 		state->PredatorY[pos] = state->PredatorY[pos] - world->height;
-
-//		pp.state->PredatorY[pos] = pp.state->PredatorY[pos]-1;
-//
-//		if(pp.state->PreyX < pp.state->PredatorX[pos]){//prey left
-//			pp.state->PredatorX[pos]--;
-//		}
-//		if(pp.state->PreyX > pp.state->PredatorX[pos]){//prey right
-//			pp.state->PredatorX[pos]++;
-//		}
 	}
 	if(state->PredatorX[pos] < 0){
 		state->PredatorX[pos] = state->PredatorX[pos] + world->length;
-
-//		pp.state->PredatorX[pos] = pp.state->PredatorX[pos]+1;
-//
-//		if(pp.state->PreyY < pp.state->PredatorY[pos]){//prey below
-//			pp.state->PredatorY[pos]--;
-//		}
-//		if(pp.state->PreyY > pp.state->PredatorY[pos]){//prey above
-//			pp.state->PredatorY[pos]++;
-//		}
 	}
 	if(state->PredatorY[pos] < 0){
 		state->PredatorY[pos] = state->PredatorY[pos] + world->height;
-//
-//		pp.state->PredatorY[pos] = pp.state->PredatorY[pos]+1;
-//
-//		if(pp.state->PreyX < pp.state->PredatorX[pos]){//prey left
-//			pp.state->PredatorX[pos]--;
-//		}
-//		if(pp.state->PreyX > pp.state->PredatorX[pos]){//prey right
-//			pp.state->PredatorX[pos]++;
-//		}
 	}
 
 	//is the predator at the same pos as the prey

@@ -23,10 +23,10 @@
 #include "population.h"
 
 #ifndef nPreds
-#define nPreds = 3
+#define nPreds 3
 #endif
 #ifndef nHidden
-#define nHidden = 15
+#define nHidden 15
 #endif
 //globals
 Neuron* bestTeam;
@@ -38,14 +38,14 @@ int catches;
 
 //input params with default values
 bool sim = false;
-int hidden = 10;
-int numIndivs = 100;
-int numInputs = 2;
-int numOutputs = 5;
-int burstGens = 10;
-int maxGens = 100000;
+//int hidden = 10;
+//int numIndivs = 100;
+//int numInputs = 2;
+//int numOutputs = 5;
+//int burstGens = 10;
+//int maxGens = 100000;
 int goalFitness = 100000;
-int numPreds = 3;
+//int numPreds = 3;
 int trialsPerEval = 9;
 
 struct tempState{
@@ -127,137 +127,12 @@ __global__ void kernelAssignFitness(int fitness, Neuron** hiddenUnits){
 //    }
 }
 
-/*
-feedForward* evaluate(PredatorPrey e, feedForward* team, int numTeams){
-	catches = 0;
-	int total_fitness = 0;
-	int SMs;
-	int deviceID;
-	cudaGetDevice(&deviceID);
-	cudaDeviceGetAttribute(&SMs, cudaDevAttrMultiProcessorCount, deviceID);
-	int threadsPerBlock = 256;
-	int blocks = 32 * SMs;
-
-	int PreyPositions[2][9] = {{16, 50, 82, 82, 82, 16, 50, 50, 82},{50, 50, 50, 82, 16, 50, 16, 82, 50}};
-
-	for(int l = 0;l < trialsPerEval;l++){//parallel?
-		int fitness =0;
-		int steps = 0;
-		int maxSteps = 150;
-		int avg_init_dist = 0;
-		int avg_final_dist = 0;
-
-		//do these before with cudaMallocManaged
-		int inplen = getTotalInputs(team[0]);
-		int outlen = getTotalOutputs(team[0]);
-		double* input = new double[inplen];
-		double* output = new double[outlen];
-		State state;
-
-		setPreyPosition(e, PreyPositions[0][l], PreyPositions[1][l]);
-		State* statepntr = getState(e);
-		Gridworld* worldpntr = getWorld(e);
-		state = *statepntr;
-		world = *worldpntr;
-
-		int nearestDist = 0;
-		int nearestPred = 0;
-		int currentDist = 0;
-
-		for(int p = 0 ; p < numPreds; p++){
-			avg_init_dist = avg_init_dist + calculateDistance(state.PredatorX[p], state.PredatorY[p], state.PreyX, state.PreyY);
-		}
-		avg_init_dist = avg_init_dist/numPreds;
-
-		while(!Caught(e) && steps < maxSteps){//paralellise so that always runs maxSteps?
-			for(int p=0; p < numPreds;p++){
-				currentDist = calculateDistance(state.PredatorX[p], state.PredatorY[p], state.PreyX, state.PreyY);
-				if(currentDist<nearestDist){
-					nearestDist = currentDist;
-					nearestPred = p;
-				}
-			}
-
-			PerformPreyAction(e, nearestPred);
-
-			for(int pred = 0; pred < numTeams;pred++){
-				input[0] = double(e.state->PreyX);
-				input[1] = double(e.state->PreyY);
-				delete[] output;
-				output = new double[outlen];//reset output in between?
-				double* out = Activate(team[pred], input, inplen, output);
-				PerformPredatorAction(e, pred, out, team[pred].NumOutputs);
-//				printf("\n");
-			}
-			State* ts = getState(e);
-			state = *ts;
-			steps++;
-//			delete[] input;
-//			delete[] output;
-///*
-			//output state
-			for(int pred = 0;pred < numPreds;pred++){
-				printf("Predator %d, %d\n", state.PredatorX[pred], state.PredatorY[pred]);
-			}
-			printf("prey %d, %d \n", state.PreyX, state.PreyY);
-//
-
-		}
-
-		if(Caught(e)){
-			if(sim == true){
-				printf("Simulation Complete\n");
-				printf("Predator at position %d, %d caught the prey at position %d, %d after %d steps", state.PredatorX[nearestPred], state.PredatorY[nearestPred], state.PreyX, state.PreyY, steps);
-			}
-		}
-
-		for(int p = 0; p < numPreds;p++){
-			avg_final_dist = avg_final_dist + calculateDistance(state.PredatorX[p], state.PredatorY[p], state.PreyX, state.PreyY);
-		}
-		avg_final_dist = avg_final_dist/numPreds;
-
-		if(!Caught(e)){
-			fitness = (avg_init_dist - avg_final_dist);// /10
-		}else{
-			fitness = (200 - avg_final_dist)/10;
-			catches++;
-		}
-		total_fitness = total_fitness + fitness;
-	}
-
-	for(int pred = 0; pred < numTeams;pred++){
-		team[pred].Fitness = (total_fitness); // /trialsPerEval
-		team[pred].Catches = catches;
-		Neuron** d_neurons;
-		// <<<blocks, threadsPerBlock>>>
-		int numBytes = team[pred].numHidden * sizeof(team[pred].HiddenUnits[0]);
-		//case 1
-//		cudaMalloc(&d_neurons, numBytes);//optimise to only take neuron fitness and trials not whole struct
-//		cudaMemcpy(team[pred].HiddenUnits, d_neurons, numBytes, cudaMemcpyHostToDevice);
-//		kernelAssignFitness<<<1, team[pred].numHidden>>>(total_fitness, d_neurons);
-//		cudaDeviceSynchronize();
-//		cudaMemcpy(team[pred].HiddenUnits, d_neurons, numBytes, cudaMemcpyDeviceToHost);
-		//case 2
-		kernelAssignFitness<<<1, team[pred].numHidden>>>(total_fitness, team[pred].HiddenUnits);
-		cudaDeviceSynchronize();
-		for(int i = 0; i<team[pred].numHidden;i++){
-			Neuron* n = team[pred].HiddenUnits[i];
-			n->Fitness = team[pred].Fitness;
-			n->Trials++;
-			team[pred].HiddenUnits[i] = n;
-		}
-	}
-	return team;
-
-}
-*/
-
 teamArr* h_eval(Gridworld* h_worldpntr, teamArr* h_teams, int h_numPreds, double* h_input, double* h_output, int h_inplen, int h_outlen, int h_trialsPerEval, bool h_sim, int h_numTrials){
 	State* h_statepntr = new State();
 	h_reset(h_statepntr, h_numPreds);
 
 	int h_catches = 0;
-	int h_totalfitness = 0;
+	int h_totalFitness = 0;
 
 	int h_PreyPositions[2][9] = {{16, 50, 82, 82, 82, 16, 50, 50, 82},{50, 50, 50, 82, 16, 50, 16, 82, 50}};
 
@@ -294,9 +169,51 @@ teamArr* h_eval(Gridworld* h_worldpntr, teamArr* h_teams, int h_numPreds, double
 			}
 
 			h_PerformPreyAction(h_statepntr, h_worldpntr, h_nearestPred);
-		}
 
+			for(int p = 0;p<h_numPreds;p++){
+				h_input[0] = double(h_statepntr->PreyX);
+				h_input[1] = double(h_statepntr->PreyY);
+				delete[] h_output;
+				h_output = new double[h_outlen];
+				double* out = h_Activate(&h_teams[i].team, h_input, h_inplen, h_output);
+				h_PerformPredatorAction(h_statepntr, h_worldpntr, p, out, h_teams[i].team.numOutputs);
+			}
+			h_steps++;
+		}
+		for(int p = 0;p< h_numPreds;p++){
+			h_avg_final_dist += h_calculateDistance(h_worldpntr, h_state.PredatorX[p], h_state.PredatorY[p], h_state.PreyX, h_state.PreyY);
+		}
+		h_avg_final_dist = h_avg_final_dist/h_numPreds;
+
+		if(!h_Caught(h_statepntr)){
+			h_fitness = h_avg_final_dist - h_avg_init_dist;
+		}else{
+			h_fitness = 200-h_avg_final_dist;
+			h_catches++;
+		}
+		h_totalFitness += h_fitness;
 	}
+
+	h_teams[0].team.fitness = h_totalFitness; // /trialsPerEval
+	h_teams[0].team.catches = h_catches;
+
+	for(int i2 = 0; i2<h_teams[0].team.numHidden;i2++){
+		Neuron n1 = h_teams[0].team.t1[i2];
+		Neuron n2 = h_teams[0].team.t2[i2];
+		Neuron n3 = h_teams[0].team.t3[i2];
+		n1.Fitness = h_teams[0].team.fitness;
+		n2.Fitness = h_teams[0].team.fitness;
+		n3.Fitness = h_teams[0].team.fitness;
+		n1.Trials++;
+		n2.Trials++;
+		n3.Trials++;
+		h_teams[0].team.t1[i2] = n1;
+		h_teams[0].team.t2[i2] = n2;
+		h_teams[0].team.t3[i2] = n3;
+	}
+
+
+
 	return h_teams;
 }
 
@@ -356,12 +273,12 @@ __global__ void runEvaluationsParallel(Gridworld* worldpntr, teamArr* d_teams, i
 				}
 				steps++;
 			}
-			if(Caught(statepntr)){
-				if(sim == true){
-					printf("Simulation Complete\n");
-					printf("Predator at position %d, %d caught the prey at position %d, %d after %d steps", statepntr->PredatorX[nearestPred], statepntr->PredatorY[nearestPred], statepntr->PreyX, statepntr->PreyY, steps);
-				}
-			}
+//			if(Caught(statepntr)){
+//				if(sim == true){
+//					printf("Simulation Complete\n");
+//					printf("Predator at position %d, %d caught the prey at position %d, %d after %d steps", statepntr->PredatorX[nearestPred], statepntr->PredatorY[nearestPred], statepntr->PreyX, statepntr->PreyY, steps);
+//				}
+//			}
 
 			for(int p = 0; p < numPreds;p++){
 				avg_final_dist = avg_final_dist + calculateDistance(worldpntr, statepntr->PredatorX[p], statepntr->PredatorY[p], statepntr->PreyX, statepntr->PreyY);
@@ -430,14 +347,14 @@ __global__ void testKernel(teamArr* teams, double* input, int inplen){
 int main(int argc, char **argv)
 {
 	//testing values
-	numInputs = 2;
-	hidden = 15;
-	numOutputs = 5;
-	numIndivs = 100;//540
-	maxGens = 100;
-	goalFitness = 100;
-	numPreds = 3;//6
-	burstGens = 2;
+	int numInputs = 2;
+	int hidden = 15;
+	int numOutputs = 5;
+	int numIndivs = 100;//540
+	int maxGens = 100;
+	int goalFitness = 100;
+	int numPreds = 3;//6
+	int burstGens = 2;
 
 
 	//TODO: parse input
@@ -523,10 +440,11 @@ int main(int argc, char **argv)
 		//evaluate teams
 //		testKernel<<<1, 100>>>(d_teams, d_input, inplen);
 		// blocks, threadsPerBlock
+		teams = h_eval(d_world, d_teams, numPreds, d_input, d_output, inplen, outlen, trialsPerEval, sim, numTrials);
 //		runEvaluationsParallel<<<blocks, threadsPerBlock>>>(d_world, d_teams, numPreds, d_input, d_output, inplen, outlen, trialsPerEval, sim, numTrials);
 //		feedForward* t = evaluate(*pp, team, numPreds);
 		CHECK(cudaPeekAtLastError());
-//		cudaDeviceSynchronize();
+		cudaDeviceSynchronize();
 		//send memory back
 		CHECK(cudaMemcpy(teams, d_teams, numTeamBytes, cudaMemcpyDeviceToHost));
 		CHECK(cudaMemcpy(h_output, d_output, outlen * sizeof(double), cudaMemcpyDeviceToHost));

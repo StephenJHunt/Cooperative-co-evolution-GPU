@@ -1,10 +1,10 @@
 #ifndef POPULATION_H_
 #define POPULATION_H_
 #ifndef nPreds
-#define nPreds = 3
+#define nPreds 3
 #endif
 #ifndef nHidden
-#define nHidden = 15
+#define nHidden 15
 #endif
 // includes, system
 #include <stdlib.h>
@@ -43,11 +43,11 @@ int popCounter = 0;
 Population* newPopulation(int size, int genesize){
 	popCounter++;
 //	Neuron* narr = new Neuron[size];
-	Neuron* n = new Neuron;
+//	Neuron* n = new Neuron;
 	Population* p = new Population;//{popCounter, size, true, size/4, genesize};
-	for(int i =0;i<size;i++){
-		p->Individuals[i] = *n;
-	}
+//	for(int i =0;i<size;i++){
+//		p->Individuals[i] = *n;
+//	}
 	p->Evolvable = true;
 	p->GeneSize=genesize;
 	p->ID=popCounter;
