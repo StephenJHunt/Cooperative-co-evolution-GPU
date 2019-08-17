@@ -184,7 +184,7 @@ teamArr* h_eval(Gridworld* h_worldpntr, teamArr* h_teams, int h_numPreds, double
 		h_avg_final_dist = h_avg_final_dist/h_numPreds;
 
 		if(!h_Caught(h_statepntr)){
-			h_fitness = h_avg_final_dist - h_avg_init_dist;
+			h_fitness = h_avg_init_dist - h_avg_final_dist;
 		}else{
 			h_fitness = 200-h_avg_final_dist;
 			h_catches++;
@@ -438,7 +438,7 @@ int main(int argc, char **argv)
 		//evaluate teams
 //		testKernel<<<1, 100>>>(d_teams, d_input, inplen);
 		// blocks, threadsPerBlock
-		teams = h_eval(h_pp->world, teams, numPreds, h_input, h_output, inplen, outlen, trialsPerEval, sim, numTrials);
+		teamArr* h_teams = h_eval(h_pp->world, teams, numPreds, h_input, h_output, inplen, outlen, trialsPerEval, sim, numTrials);
 //		runEvaluationsParallel<<<blocks, threadsPerBlock>>>(d_world, d_teams, numPreds, d_input, d_output, inplen, outlen, trialsPerEval, sim, numTrials);
 //		feedForward* t = evaluate(*pp, team, numPreds);
 		CHECK(cudaPeekAtLastError());
