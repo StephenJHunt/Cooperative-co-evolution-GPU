@@ -143,25 +143,20 @@ teamArr* h_eval(Gridworld* h_worldpntr, teamArr* h_teams, int h_numPreds, double
 		int h_avg_init_dist = 0;
 		int h_avg_final_dist = 0;
 
-		State h_state;
-		Gridworld h_world;
-
 		h_setPreyPosition(h_statepntr, h_PreyPositions[0][i], h_PreyPositions[1][i]);
-		h_state = *h_statepntr;
-		h_world = *h_worldpntr;
 
 		int h_nearestDist = 100;
 		int h_nearestPred = 0;
 		int h_currentDist = 0;
 
 		for(int p = 0;p<h_numPreds;p++){
-			h_avg_init_dist += h_calculateDistance(h_worldpntr, h_state.PredatorX[p], h_state.PredatorY[p], h_state.PreyX, h_state.PreyY);
+			h_avg_init_dist += h_calculateDistance(h_worldpntr, h_statepntr->PredatorX[p], h_statepntr->PredatorY[p], h_statepntr->PreyX, h_statepntr->PreyY);
 		}
 		h_avg_init_dist = h_avg_init_dist/h_numPreds;
 
 		while(!h_Caught(h_statepntr) && h_steps < h_maxSteps){
 			for(int p=0;p<h_numPreds;p++){
-				h_currentDist = h_calculateDistance(h_worldpntr, h_state.PredatorX[p], h_state.PredatorY[p], h_state.PreyX, h_state.PreyY);
+				h_currentDist = h_calculateDistance(h_worldpntr, h_statepntr->PredatorX[p], h_statepntr->PredatorY[p], h_statepntr->PreyX, h_statepntr->PreyY);
 				if(h_currentDist<h_nearestDist){
 					h_nearestDist = h_currentDist;
 					h_nearestPred = p;
@@ -184,7 +179,7 @@ teamArr* h_eval(Gridworld* h_worldpntr, teamArr* h_teams, int h_numPreds, double
 			h_steps++;
 		}
 		for(int p = 0;p< h_numPreds;p++){
-			h_avg_final_dist += h_calculateDistance(h_worldpntr, h_state.PredatorX[p], h_state.PredatorY[p], h_state.PreyX, h_state.PreyY);
+			h_avg_final_dist += h_calculateDistance(h_worldpntr, h_statepntr->PredatorX[p], h_statepntr->PredatorY[p], h_statepntr->PreyX, h_statepntr->PreyY);
 		}
 		h_avg_final_dist = h_avg_final_dist/h_numPreds;
 

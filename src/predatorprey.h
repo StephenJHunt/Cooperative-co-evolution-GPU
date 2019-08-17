@@ -73,7 +73,7 @@ __device__ void setPreyPosition(State* state,int x, int y){
 int h_getMaxPos(double* h_action, int h_actLen){
 	double h_max = 0;
 	int h_res = 0;
-	for(int i=0;i<h_actLen;i++){
+	for(int i=0;i<h_actLen-1;i++){
 		if(h_action[i] > h_max){
 			h_max = h_action[i];
 			h_res = i;
