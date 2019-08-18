@@ -6,6 +6,9 @@
 #ifndef nHidden
 #define nHidden 15
 #endif
+#ifndef nIndivs
+#define nIndivs 100
+#endif
 // includes, system
 #include <stdlib.h>
 #include <stdio.h>
@@ -31,7 +34,7 @@
 struct Population{
 	int ID;
 //	Neuron* Individuals;
-	Neuron Individuals[100];
+	Neuron Individuals[nIndivs];
 	int numIndividuals;
 	bool Evolvable;
 	int NumToBreed;

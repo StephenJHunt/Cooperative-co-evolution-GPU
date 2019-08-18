@@ -28,12 +28,12 @@
 struct aTeam{
 	int numOutputs;
 	int numInputs;
-	double act1[15];
-	Neuron t1[15];
-	double act2[15];
-	Neuron t2[15];
-	double act3[15];
-	Neuron t3[15];
+	double act1[nHidden];
+	Neuron t1[nHidden];
+	double act2[nHidden];
+	Neuron t2[nHidden];
+	double act3[nHidden];
+	Neuron t3[nHidden];
 	int fitness;
 	int numHidden;
 	int catches;
@@ -42,9 +42,9 @@ struct aTeam{
 struct feedForward {
 	int ID;
 //	double* Activation;
-	double Activation[15];
+	double Activation[nHidden];
 //	Neuron* HiddenUnits;
-	Neuron HiddenUnits[15];
+	Neuron HiddenUnits[nHidden];
 	int NumInputs;
 	int NumOutputs;
 	bool bias;
