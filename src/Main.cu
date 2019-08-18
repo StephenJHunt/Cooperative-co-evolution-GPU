@@ -384,14 +384,16 @@ int main(int argc, char **argv)
 
 	teamArr* teams;
 	teamArr* d_teams;
-
+	PredatorPrey* h_pp;
+	h_pp = newPredatorPrey(numPreds);
+	feedForward* ff = newFeedForward(numInputs, hidden, numOutputs, false);
 	//run simulation
 	while(generations < maxGens && catches < numTrials){//run contents of this loop in parallel
 		int numTeamBytes = numTrials * sizeof(aTeam);
-		CHECK(cudaMalloc(&d_teams, numTeamBytes));
+//		CHECK(cudaMalloc(&d_teams, numTeamBytes));
 		teams = (teamArr*)malloc(numTeamBytes);
 		catches = 0;
-		feedForward* ff = newFeedForward(numInputs, hidden, numOutputs, false);
+		ff_reset(ff, numInputs, hidden, numOutputs, false);
 		for(int t = 0; t < numTrials;t++){
 			for(int p = 0;p<numPreds;p++){
 				ff[p] = Create(ff[p], predSubPops[p], hidden);
@@ -412,45 +414,48 @@ int main(int argc, char **argv)
 			tm.numOutputs = ff->NumOutputs;
 			teams[t].team = tm;
 		}
-		CHECK(cudaMemcpy(d_teams, teams, numTeamBytes, cudaMemcpyHostToDevice));//State is causing the issue
+//		CHECK(cudaMemcpy(d_teams, teams, numTeamBytes, cudaMemcpyHostToDevice));
 
-		PredatorPrey* h_pp;
+
 //		State* d_state;
 		Gridworld* d_world;
 //		CHECK(cudaMalloc(&d_state, sizeof(State)));
-		CHECK(cudaMalloc(&d_world, sizeof(Gridworld)));
-		h_pp = newPredatorPrey(numPreds);
+//		CHECK(cudaMalloc(&d_world, sizeof(Gridworld)));
 		reset(h_pp, numPreds);
 //		CHECK(cudaMemcpy(d_state, h_pp->state, sizeof(State), cudaMemcpyHostToDevice));
-		CHECK(cudaMemcpy(d_world, h_pp->world,  sizeof(Gridworld), cudaMemcpyHostToDevice));
+//		CHECK(cudaMemcpy(d_world, h_pp->world,  sizeof(Gridworld), cudaMemcpyHostToDevice));
 		//setup for kernel evaluation
 		int inplen = (teams[0].team.numInputs);
 		int outlen = (teams[0].team.numOutputs);
 		double* d_input;
 		double* h_input;
-		CHECK(cudaMalloc(&d_input, inplen * sizeof(double)));
+//		CHECK(cudaMalloc(&d_input, inplen * sizeof(double)));
 		h_input = (double*)malloc(inplen * sizeof(double));
 		double* d_output;
 		double* h_output;
-		CHECK(cudaMalloc(&d_output, outlen * sizeof(double)));
+//		CHECK(cudaMalloc(&d_output, outlen * sizeof(double)));
 		h_output = (double*)malloc(outlen * sizeof(double));
 
 		//evaluate teams
 //		testKernel<<<1, 100>>>(d_teams, d_input, inplen);
 		// blocks, threadsPerBlock
-		teamArr* h_teams = h_eval(h_pp->world, teams, numPreds, h_input, h_output, inplen, outlen, trialsPerEval, sim, numTrials);
+		teams = h_eval(h_pp->world, teams, numPreds, h_input, h_output, inplen, outlen, trialsPerEval, sim, numTrials);
 //		runEvaluationsParallel<<<blocks, threadsPerBlock>>>(d_world, d_teams, numPreds, d_input, d_output, inplen, outlen, trialsPerEval, sim, numTrials);
 //		feedForward* t = evaluate(*pp, team, numPreds);
-		CHECK(cudaPeekAtLastError());
-		cudaDeviceSynchronize();
+//		CHECK(cudaPeekAtLastError());
+//		cudaDeviceSynchronize();
 		//send memory back
-		CHECK(cudaMemcpy(teams, d_teams, numTeamBytes, cudaMemcpyDeviceToHost));
-		CHECK(cudaMemcpy(h_output, d_output, outlen * sizeof(double), cudaMemcpyDeviceToHost));
-		CHECK(cudaMemcpy(h_input, d_input, inplen * sizeof(double), cudaMemcpyDeviceToHost));
+//		CHECK(cudaMemcpy(teams, d_teams, numTeamBytes, cudaMemcpyDeviceToHost));
+//		CHECK(cudaMemcpy(h_output, d_output, outlen * sizeof(double), cudaMemcpyDeviceToHost));
+//		CHECK(cudaMemcpy(h_input, d_input, inplen * sizeof(double), cudaMemcpyDeviceToHost));
 
 		//assign team scores
 		//TODO: loop through all teams
-		for(int n = 0; n < numTrials;n++){
+		bestFitness = (teams[0].team.fitness);
+		bestGene = teams[0].team.numInputs + teams[0].team.numOutputs;
+		bestTeam = teams[0].team.t1;
+		/*//commented out for single team testing
+		for(int n = 0; n < 1;n++){ //numTrials set to 1 for testing
 			catches = catches + (teams[n].team.catches);
 			if(bestFitness == 0 && !teamfound){
 				bestFitness = (teams[n].team.fitness);
@@ -474,7 +479,7 @@ int main(int argc, char **argv)
 				bestTeam = teams[n].team.t1;
 			}
 		}
-
+		*/
 		printf("Generation %d, best fitness is %d, catches is %d\n", generations+1, bestFitness, catches);
 
 		//check for stagnation and burst mutate if stagnated

@@ -71,11 +71,11 @@ feedForward* newFeedForward(int in, int hid, int out, bool bias){
 //	Neuron neuArr[15];
 //	feedForward* ff = new feedForward{counter, actArr, neuArr, in, out, bias, 0, 0, 0, -1, -1, "Feed Forward", genesize, hid};
 	feedForward* ff = new feedForward;
-	Neuron* n = new Neuron;
-	for(int i=0;i<hid;i++){
-		ff->Activation[i] = 0;
-		ff->HiddenUnits[i] = *n;
-	}
+//	Neuron* n = new Neuron;
+//	for(int i=0;i<hid;i++){
+//		ff->Activation[i] = 0;
+//		ff->HiddenUnits[i] = *n;
+//	}
 //	ff->Activation = actArr;
 	ff->Catches=0;
 	ff->Fitness=0;
@@ -91,6 +91,21 @@ feedForward* newFeedForward(int in, int hid, int out, bool bias){
 	ff->name="Feed Forward";
 	ff->numHidden=hid;
 	return ff;
+}
+
+void ff_reset(feedForward* ff,int in, int hid, int out, bool bias){
+	ff->Catches=0;
+	ff->Fitness=0;
+	ff->GeneSize=in+out;
+	ff->ID=counter;
+	ff->NumInputs=in;
+	ff->NumOutputs=out;
+	ff->Parent1=-1;
+	ff->Parent2=-1;
+	ff->Trials=0;
+	ff->bias=false;
+	ff->name="Feed Forward";
+	ff->numHidden=hid;
 }
 
 double* h_Activate(aTeam* h_t, double* h_input, int h_inputLen, double* h_output){
