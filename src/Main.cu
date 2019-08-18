@@ -176,6 +176,10 @@ teamArr* h_eval(Gridworld* h_worldpntr, teamArr* h_teams, int h_numPreds, double
 				double* out = h_Activate(&h_teams[i].team, h_input, h_inplen, h_output);
 				h_PerformPredatorAction(h_statepntr, h_worldpntr, p, out, h_teams[i].team.numOutputs);
 			}
+//			printf("Pred1 X: %d 	Pred1 Y: %d\n", h_statepntr->PredatorX[0], h_statepntr->PredatorY[0]);
+//			printf("Pred2 X: %d 	Pred2 Y: %d\n", h_statepntr->PredatorX[1], h_statepntr->PredatorY[1]);
+//			printf("Pred3 X: %d 	Pred3 Y: %d\n", h_statepntr->PredatorX[2], h_statepntr->PredatorY[2]);
+//			printf("Prey X: %d 	Prey Y: %d\n", h_statepntr->PreyX, h_statepntr->PreyY);
 			h_steps++;
 		}
 		for(int p = 0;p< h_numPreds;p++){
@@ -480,7 +484,7 @@ int main(int argc, char **argv)
 			}
 		}
 		*/
-		printf("Generation %d, best fitness is %d, catches is %d\n", generations+1, bestFitness, catches);
+//		printf("Generation %d, best fitness is %d, catches is %d\n", generations+1, bestFitness, catches);
 
 		//check for stagnation and burst mutate if stagnated
 		if(generations%burstGens == 0 && generations != 0){
