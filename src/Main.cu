@@ -394,7 +394,8 @@ int main(int argc, char **argv)
 	//run simulation
 	while(generations < maxGens && catches < numTrials){//run contents of this loop in parallel
 		int numTeamBytes = numTrials * sizeof(aTeam);
-//		CHECK(cudaMalloc(&d_teams, numTeamBytes));
+		printf("team array bytes: %d\n", numTeamBytes);
+		CHECK(cudaMalloc(&d_teams, numTeamBytes));
 		teams = (teamArr*)malloc(numTeamBytes);
 		catches = 0;
 		ff_reset(ff, numInputs, hidden, numOutputs, false);
@@ -418,26 +419,29 @@ int main(int argc, char **argv)
 			tm.numOutputs = ff->NumOutputs;
 			teams[t].team = tm;
 		}
-//		CHECK(cudaMemcpy(d_teams, teams, numTeamBytes, cudaMemcpyHostToDevice));
+		CHECK(cudaMemcpy(d_teams, teams, numTeamBytes, cudaMemcpyHostToDevice));
 
 
 //		State* d_state;
 		Gridworld* d_world;
 //		CHECK(cudaMalloc(&d_state, sizeof(State)));
-//		CHECK(cudaMalloc(&d_world, sizeof(Gridworld)));
+		printf("world struct bytes: %d\n", sizeof(Gridworld));
+		CHECK(cudaMalloc(&d_world, sizeof(Gridworld)));
 		reset(h_pp, numPreds);
 //		CHECK(cudaMemcpy(d_state, h_pp->state, sizeof(State), cudaMemcpyHostToDevice));
-//		CHECK(cudaMemcpy(d_world, h_pp->world,  sizeof(Gridworld), cudaMemcpyHostToDevice));
+		CHECK(cudaMemcpy(d_world, h_pp->world,  sizeof(Gridworld), cudaMemcpyHostToDevice));
 		//setup for kernel evaluation
 		int inplen = (teams[0].team.numInputs);
 		int outlen = (teams[0].team.numOutputs);
 		double* d_input;
 		double* h_input;
-//		CHECK(cudaMalloc(&d_input, inplen * sizeof(double)));
+		printf("input array bytes: %d\n", inplen * sizeof(double));
+		CHECK(cudaMalloc(&d_input, inplen * sizeof(double)));
 		h_input = (double*)malloc(inplen * sizeof(double));
 		double* d_output;
 		double* h_output;
-//		CHECK(cudaMalloc(&d_output, outlen * sizeof(double)));
+		printf("output array bytes: %d\n", outlen * sizeof(double));
+		CHECK(cudaMalloc(&d_output, outlen * sizeof(double)));
 		h_output = (double*)malloc(outlen * sizeof(double));
 
 		//evaluate teams
