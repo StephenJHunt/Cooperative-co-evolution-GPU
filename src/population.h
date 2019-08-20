@@ -9,6 +9,9 @@
 #ifndef nIndivs
 #define nIndivs 100
 #endif
+#ifndef weightSize
+#define weightSize 7
+#endif
 // includes, system
 #include <stdlib.h>
 #include <stdio.h>
@@ -45,6 +48,9 @@ int popCounter = 0;
 
 Population* newPopulation(int size, int genesize){
 	popCounter++;
+	if(size > nIndivs){
+		printf("ERROR IN newPopulation size param\n");
+	}
 //	Neuron* narr = new Neuron[size];
 //	Neuron* n = new Neuron;
 	Population* p = new Population;//{popCounter, size, true, size/4, genesize};
@@ -58,28 +64,13 @@ Population* newPopulation(int size, int genesize){
 	p->numIndividuals=size;
 	return p;
 }
-/*
-bool Less(Neuron* n, int i, int j){
-	Neuron arr = *n;
-	Neuron n1 = arr[i];
-	Neuron n2 = arr[j];
-	int div1 = n1.Trials;
-	int div2 = n2.Trials;
-	if(div1 == 0){
-		div1 = 1;
-	}
-	if(div2 == 0){
-		div2 = 1;
-	}
-	return (n1.Fitness / div1) > (n2.Fitness / div2);
-}*/
 
 void createIndividuals(Population* p){
 	if(p->Evolvable){
 		for(int i=0;i<p->numIndividuals;i++){
-			Neuron* n = newNeuron(p->GeneSize);
-			*n = createWeights(*n, p->GeneSize);
-			p->Individuals[i] = *n;
+			Neuron n = newNeuron(p->GeneSize, p->Individuals[i]);
+			n = createWeights(n, p->GeneSize);
+			p->Individuals[i] = n;
 		}
 	}
 }
@@ -87,21 +78,11 @@ void createIndividuals(Population* p){
 Neuron selectNeuron(Population p){
 	srand(time(0));
 	int idx = rand() % p.numIndividuals;
+	if(idx > nIndivs || idx < 0){
+		printf("Index out of range in function selectNeuron\n");
+	}
 //	printf("select neuron rand: %d\n", idx);
 	return p.Individuals[idx];
-}
-
-bool operator<(Neuron n1, Neuron n2){
-	int size = n1.size;
-	int div1 = n1.Trials;
-	int div2 = n2.Trials;
-	if(div1 == 0){
-		div1 = 1;
-	}
-	if(div2 == 0){
-		div2 = 1;
-	}
-	return (n1.Fitness / div1) < (n2.Fitness / div2);
 }
 
 Population sortNeurons(Population p){
@@ -123,6 +104,12 @@ Population sortNeurons(Population p){
 void onePointCrossover(Neuron* parent1, Neuron* parent2, Neuron* child1, Neuron* child2){
 	srand(time(0));
 	int crosspoint = rand() % parent1->size;
+
+	if(parent1->size != child1->size || parent1->size != child2->size || parent2->size != child1->size || parent2->size != child2->size){
+		printf("Neuron size mismatches in function onePointCrossover\n");
+		return;
+	}
+
 	for(int i = 0;i < parent1->size;i++){
 		child1->Weight[i] = parent2->Weight[i];
 		child2->Weight[i] = parent2->Weight[i];
@@ -134,6 +121,11 @@ void onePointCrossover(Neuron* parent1, Neuron* parent2, Neuron* child1, Neuron*
 
 	reset(child1);
 	reset(child2);
+
+	if(crosspoint > weightSize){
+		printf("Crosspoint index out of bounds in function onePointCrossover\n");
+		return;
+	}
 
 	for(int j=0;j<crosspoint;j++){
 		double temp = child1->Weight[j];
@@ -151,8 +143,20 @@ Population mate(Population p){
 		}else{
 			mate = rand() % i;
 		}
+		if(mate > nIndivs || mate <0){
+			printf("Mate index 1 out of bounds in function mate\n");
+			break;
+		}
 		int childIndex1 = p.numIndividuals - (1 + (i *2));
+		if(childIndex1 > nIndivs || childIndex1 <0){
+			printf("Child index 1 out of bounds in function mate\n");
+			break;
+		}
 		int childIndex2 = p.numIndividuals - (2 + (i *2));
+		if(childIndex2 > nIndivs || childIndex2 <0){
+			printf("Child index 2 out of bounds in function mate\n");
+			break;
+		}
 		onePointCrossover(&p.Individuals[i], &p.Individuals[mate], &p.Individuals[childIndex1], &p.Individuals[childIndex2]);
 	}
 	return p;
@@ -163,20 +167,16 @@ Population mutate(Population p, double m){
 	for(int i=p.NumToBreed;i<p.numIndividuals;i++){
 		if(((double)rand()) < m){
 			int mutationIndex = rand() % p.GeneSize;
+			if(mutationIndex > weightSize || weightSize < 0){
+				printf("Mutation Index out of bounds in function mutate\n");
+				break;
+			}
 			p.Individuals[i].Weight[mutationIndex] = p.Individuals[i].Weight[mutationIndex] + CauchyRand(0.3);
 		}
 	}
 	return p;
 }
 
-void growIndividuals(Population p){
-	Neuron* arr = new Neuron[p.numIndividuals+1];
-	double temp = 1.0;
-	for(int i=0;i<p.numIndividuals;i++){
-//		p.numIndividuals[i].Weight[i] = p.Individuals[i].Weight[i] + temp;
-		//I don't actually know what this function is supposed to do
-	}
-}
 
 
 #endif

@@ -93,19 +93,20 @@ feedForward* newFeedForward(int in, int hid, int out, bool bias){
 	return ff;
 }
 
-void ff_reset(feedForward* ff,int in, int hid, int out, bool bias){
-	ff->Catches=0;
-	ff->Fitness=0;
-	ff->GeneSize=in+out;
-	ff->ID=counter;
-	ff->NumInputs=in;
-	ff->NumOutputs=out;
-	ff->Parent1=-1;
-	ff->Parent2=-1;
-	ff->Trials=0;
-	ff->bias=false;
-	ff->name="Feed Forward";
-	ff->numHidden=hid;
+feedForward ff_reset(feedForward ff,int in, int hid, int out, bool bias){
+	ff.Catches=0;
+	ff.Fitness=0;
+	ff.GeneSize=in+out;
+	ff.ID=counter;
+	ff.NumInputs=in;
+	ff.NumOutputs=out;
+	ff.Parent1=-1;
+	ff.Parent2=-1;
+	ff.Trials=0;
+	ff.bias=false;
+	ff.name="Feed Forward";
+	ff.numHidden=hid;
+	return ff;
 }
 
 double* h_Activate(aTeam* h_t, double* h_input, int h_inputLen, double* h_output){
@@ -130,29 +131,22 @@ double* h_Activate(aTeam* h_t, double* h_input, int h_inputLen, double* h_output
 }
 
 __device__ double* Activate(aTeam* t, double* input, int inputLen, double* output){
-	for(int key = 0; key< t->numHidden;key++){
-		Neuron n1 = t->t1[key];
-		Neuron n2 = t->t2[key];
-		Neuron n3 = t->t3[key];
-		for(int i = 0; i< inputLen;i++){
-			t->act1[key] = t->act1[key] + (n1.Weight[i] * input[i]);
-			t->act2[key] = t->act2[key] + (n2.Weight[i] * input[i]);
-			t->act3[key] = t->act3[key] + (n3.Weight[i] * input[i]);
+	for(int key = 0; key<t->numHidden;key++){
+		for(int i=0;i<inputLen;i++){
+			t->act1[key] += t->t1[key].Weight[i] * input[i];
+			t->act2[key] += t->t2[key].Weight[i] * input[i];
+			t->act3[key] += t->t3[key].Weight[i] * input[i];
 		}
 		t->act1[key] = Logistic(1.0, t->act1[key]);
 		t->act2[key] = Logistic(1.0, t->act2[key]);
 		t->act3[key] = Logistic(1.0, t->act3[key]);
 	}
 	for(int i=0;i<t->numOutputs;i++){
-		for(int key = 0; key<t->numHidden; key++){
-			Neuron n1 = t->t1[key];
-			Neuron n2 = t->t2[key];
-			Neuron n3 = t->t3[key];
-			output[i] = output[i] + (t->act1[key] * n1.Weight[inputLen + i]);
-			output[i] = output[i] + (t->act2[key] * n2.Weight[inputLen + i]);
-			output[i] = output[i] + (t->act3[key] * n3.Weight[inputLen + i]);
+		for(int key = 0;key<t->numHidden;key++){
+			output[i] += t->act1[key] * t->t1[key].Weight[inputLen +i];
+			output[i] += t->act2[key] * t->t2[key].Weight[inputLen +i];
+			output[i] += t->act3[key] * t->t3[key].Weight[inputLen +i];
 		}
-//		output[i] = Direction((double)output[i]);//call different
 	}
 	return output;
 }

@@ -83,51 +83,51 @@ int h_getMaxPos(double* h_action, int h_actLen){
 }
 
 __device__ int getMaxPosition(double* action, int actionlen){
- double max = 0;
- int result = 0;
- for(int i = 0;i < actionlen-1;i++){
+	double max = 0;
+	int result = 0;
+	for(int i = 0;i < actionlen-1;i++){
 	 if(action[i] > max){
 		 max = action[i];
 		 result = i;
 	 }
- }
- return result;
+	}
+	return result;
 }
 
 void h_PerformPredatorAction(State* h_state, Gridworld* h_world, int h_pos, double* h_action, int h_actLen){
 	int h_predAction = h_getMaxPos(h_action, h_actLen);
 	if(h_predAction == 0){
-			h_state->PredatorY[h_pos]++;
-		}
-		else if(h_predAction == 1){
-			h_state->PredatorX[h_pos]++;
-		}
-		else if(h_predAction == 2){
-			h_state->PredatorY[h_pos]--;
-		}
-		else if(h_predAction == 3){
-			h_state->PredatorX[h_pos]--;
-		}
+		h_state->PredatorY[h_pos]++;
+	}
+	else if(h_predAction == 1){
+		h_state->PredatorX[h_pos]++;
+	}
+	else if(h_predAction == 2){
+		h_state->PredatorY[h_pos]--;
+	}
+	else if(h_predAction == 3){
+		h_state->PredatorX[h_pos]--;
+	}
 
-		//wrap around world
-		if(h_state->PredatorX[h_pos] >= h_world->length){
-			h_state->PredatorX[h_pos] = h_state->PredatorX[h_pos] - h_world->length;
+	//wrap around world
+	if(h_state->PredatorX[h_pos] >= h_world->length){
+		h_state->PredatorX[h_pos] = h_state->PredatorX[h_pos] - h_world->length;
 
-		}
-		if(h_state->PredatorY[h_pos] >= h_world->height){
-			h_state->PredatorY[h_pos] = h_state->PredatorY[h_pos] - h_world->height;
-		}
-		if(h_state->PredatorX[h_pos] < 0){
-			h_state->PredatorX[h_pos] = h_state->PredatorX[h_pos] + h_world->length;
-		}
-		if(h_state->PredatorY[h_pos] < 0){
-			h_state->PredatorY[h_pos] = h_state->PredatorY[h_pos] + h_world->height;
-		}
+	}
+	if(h_state->PredatorY[h_pos] >= h_world->height){
+		h_state->PredatorY[h_pos] = h_state->PredatorY[h_pos] - h_world->height;
+	}
+	if(h_state->PredatorX[h_pos] < 0){
+		h_state->PredatorX[h_pos] = h_state->PredatorX[h_pos] + h_world->length;
+	}
+	if(h_state->PredatorY[h_pos] < 0){
+		h_state->PredatorY[h_pos] = h_state->PredatorY[h_pos] + h_world->height;
+	}
 
-		//is the predator at the same pos as the prey
-		if((h_state->PredatorX[h_pos] == h_state->PreyX) && (h_state->PredatorY[h_pos] == h_state->PreyY)){
-			h_state->Caught = true;
-		}
+	//is the predator at the same pos as the prey
+	if((h_state->PredatorX[h_pos] == h_state->PreyX) && (h_state->PredatorY[h_pos] == h_state->PreyY)){
+		h_state->Caught = true;
+	}
 }
 
 __device__ void PerformPredatorAction(State* state, Gridworld* world, int pos, double* action, int actionlen){

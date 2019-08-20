@@ -13,7 +13,7 @@
 double CauchyRand(double range){
 	double u = 0.5;
 	double cut = 10.0;
-	srand(time(0));
+//	srand(time(0));
 	while(u > 0.49 && u < 0.51){//reroll until a valid random
 		u = 0+(1-0) * rand()/((double)RAND_MAX);
 //		u = 0.49;
