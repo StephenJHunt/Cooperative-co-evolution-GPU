@@ -76,8 +76,9 @@ struct teamArr{
 
 Population* init(int hid, int num, int genes){
 	Population* pops = new Population[hid];
+	Population* p = newPopulation(num, genes);
 	for(int i = 0; i < hid; i++){
-		Population* p = newPopulation(num, genes);
+		if(i>0) p->ID = p->ID + 1;
 		createIndividuals(p);
 		pops[i] = *p;
 	}
@@ -218,11 +219,11 @@ teamArr* h_eval(Gridworld* h_worldpntr, teamArr* h_teams, int h_numPreds, double
 
 	return h_teams;
 }
-/*
-__global__ void runEvaluationsParallel(Gridworld* worldpntr, teamArr* d_teams, int numPreds, double* input, double* output, int inplen, int outlen, int trialsPerEval, bool sim, int numTrials){
+
+__global__ void runEvaluationsParallel(State* statepntr, Gridworld* worldpntr, teamArr* d_teams, int numPreds, double* input, double* output, int inplen, int outlen, int trialsPerEval, bool sim, int numTrials){
 	int index = threadIdx.x + blockIdx.x * blockDim.x;
 	int stride = blockDim.x * gridDim.x;
-	State* statepntr = new State();
+//	State* statepntr = new State();
 	kernelReset(statepntr, numPreds);
 //
 	for(int i = index;i < numTrials;i+= stride){
@@ -231,32 +232,28 @@ __global__ void runEvaluationsParallel(Gridworld* worldpntr, teamArr* d_teams, i
 //
 		int PreyPositions[2][9] = {{16, 50, 82, 82, 82, 16, 50, 50, 82},{50, 50, 50, 82, 16, 50, 16, 82, 50}};
 //
-		for(int l = 0;l < trialsPerEval;l++){//parallel?
+		for(int l = 0;l < trialsPerEval;l++){
 			int fitness =0;
 			int steps = 0;
 			int maxSteps = 150;
 			int avg_init_dist = 0;
 			int avg_final_dist = 0;
 
-			State state;
-			Gridworld world;
+			setPreyPosition(statepntr, PreyPositions[0][l], PreyPositions[1][l]);
 
-			setPreyPosition(statepntr, PreyPositions[0][l], PreyPositions[1][l]);//use state instead of PredatorPrey?
-			state = *statepntr;
-			world = *worldpntr;
 
 			int nearestDist = 100;//so that closest pred changes
 			int nearestPred = 0;
 			int currentDist = 0;
 
 			for(int p = 0 ; p < numPreds; p++){
-				avg_init_dist = avg_init_dist + calculateDistance(worldpntr, state.PredatorX[p], state.PredatorY[p], state.PreyX, state.PreyY);
+				avg_init_dist = avg_init_dist + calculateDistance(worldpntr, statepntr->PredatorX[p], statepntr->PredatorY[p], statepntr->PreyX, statepntr->PreyY);
 			}
 			avg_init_dist = avg_init_dist/numPreds;
 
-			while(!Caught(statepntr) && steps < maxSteps){//paralellise so that always runs maxSteps?
+			while(!Caught(statepntr) && steps < maxSteps){
 				for(int p=0; p < numPreds;p++){
-					currentDist = calculateDistance(worldpntr, state.PredatorX[p], state.PredatorY[p], state.PreyX, state.PreyY);
+					currentDist = calculateDistance(worldpntr, statepntr->PredatorX[p], statepntr->PredatorY[p], statepntr->PreyX, statepntr->PreyY);
 					if(currentDist<nearestDist){
 						nearestDist = currentDist;
 						nearestPred = p;
@@ -268,19 +265,14 @@ __global__ void runEvaluationsParallel(Gridworld* worldpntr, teamArr* d_teams, i
 				for(int pred = 0; pred < numPreds;pred++){
 					input[0] = double(statepntr->PreyX);
 					input[1] = double(statepntr->PreyY);
-					delete[] output;
-					output = new double[outlen];
+					for(int o=0;o<outlen;o++){
+						output[o] = 0;
+					}
 					double* out = Activate(&d_teams[i].team, input, inplen, output);
 					PerformPredatorAction(statepntr, worldpntr, pred, out, d_teams[i].team.numOutputs);//change to use state?
 				}
 				steps++;
 			}
-//			if(Caught(statepntr)){
-//				if(sim == true){
-//					printf("Simulation Complete\n");
-//					printf("Predator at position %d, %d caught the prey at position %d, %d after %d steps", statepntr->PredatorX[nearestPred], statepntr->PredatorY[nearestPred], statepntr->PreyX, statepntr->PreyY, steps);
-//				}
-//			}
 
 			for(int p = 0; p < numPreds;p++){
 				avg_final_dist = avg_final_dist + calculateDistance(worldpntr, statepntr->PredatorX[p], statepntr->PredatorY[p], statepntr->PreyX, statepntr->PreyY);
@@ -315,7 +307,7 @@ __global__ void runEvaluationsParallel(Gridworld* worldpntr, teamArr* d_teams, i
 		}
 	}
 }
-*/
+
 void CHECK(cudaError_t err){
 	if(err){
 		printf("Error in %s at line %d: %s\n", __FILE__, __LINE__, cudaGetErrorString(err));
@@ -390,17 +382,25 @@ int main(int argc, char **argv)
 	teamArr* d_teams;
 	PredatorPrey* h_pp;
 	h_pp = newPredatorPrey(numPreds);
-	feedForward* ff = newFeedForward(numInputs, hidden, numOutputs, false);
+	feedForward* ff = new feedForward[numPreds];
+	//setup constructs in memory
+	int numTeamBytes = numTrials * sizeof(aTeam);
+	printf("team array bytes: %d\n", numTeamBytes);
+	CHECK(cudaMalloc(&d_teams, numTeamBytes));
+	teams = (teamArr*)malloc(numTeamBytes);
+	Gridworld* d_world;
+	printf("world struct bytes: %d\n", sizeof(Gridworld));
+	CHECK(cudaMalloc(&d_world, sizeof(Gridworld)));
+	State* d_state;
+	CHECK(cudaMalloc(&d_state, sizeof(State)));
+
 	//run simulation
 	while(generations < maxGens && catches < numTrials){//run contents of this loop in parallel
-		int numTeamBytes = numTrials * sizeof(aTeam);
-		printf("team array bytes: %d\n", numTeamBytes);
-		CHECK(cudaMalloc(&d_teams, numTeamBytes));
-		teams = (teamArr*)malloc(numTeamBytes);
 		catches = 0;
-		ff_reset(ff, numInputs, hidden, numOutputs, false);
+
 		for(int t = 0; t < numTrials;t++){
 			for(int p = 0;p<numPreds;p++){
+				ff[p] = ff_reset(ff[p], numInputs, hidden, numOutputs, false);
 				ff[p] = Create(ff[p], predSubPops[p], hidden);
 			}
 			aTeam tm;
@@ -421,14 +421,7 @@ int main(int argc, char **argv)
 		}
 		CHECK(cudaMemcpy(d_teams, teams, numTeamBytes, cudaMemcpyHostToDevice));
 
-
-//		State* d_state;
-		Gridworld* d_world;
-//		CHECK(cudaMalloc(&d_state, sizeof(State)));
-		printf("world struct bytes: %d\n", sizeof(Gridworld));
-		CHECK(cudaMalloc(&d_world, sizeof(Gridworld)));
 		reset(h_pp, numPreds);
-//		CHECK(cudaMemcpy(d_state, h_pp->state, sizeof(State), cudaMemcpyHostToDevice));
 		CHECK(cudaMemcpy(d_world, h_pp->world,  sizeof(Gridworld), cudaMemcpyHostToDevice));
 		//setup for kernel evaluation
 		int inplen = (teams[0].team.numInputs);
@@ -447,23 +440,26 @@ int main(int argc, char **argv)
 		//evaluate teams
 //		testKernel<<<1, 100>>>(d_teams, d_input, inplen);
 		// blocks, threadsPerBlock
-		teams = h_eval(h_pp->world, teams, numPreds, h_input, h_output, inplen, outlen, trialsPerEval, sim, numTrials);
-//		runEvaluationsParallel<<<blocks, threadsPerBlock>>>(d_world, d_teams, numPreds, d_input, d_output, inplen, outlen, trialsPerEval, sim, numTrials);
+//		teams = h_eval(h_pp->world, teams, numPreds, h_input, h_output, inplen, outlen, trialsPerEval, sim, numTrials);
+		runEvaluationsParallel<<<blocks, threadsPerBlock>>>(d_state, d_world, d_teams, numPreds, d_input, d_output, inplen, outlen, trialsPerEval, sim, numTrials);
 //		feedForward* t = evaluate(*pp, team, numPreds);
-//		CHECK(cudaPeekAtLastError());
-//		cudaDeviceSynchronize();
+		CHECK(cudaPeekAtLastError());
+		cudaDeviceSynchronize();
 		//send memory back
-//		CHECK(cudaMemcpy(teams, d_teams, numTeamBytes, cudaMemcpyDeviceToHost));
-//		CHECK(cudaMemcpy(h_output, d_output, outlen * sizeof(double), cudaMemcpyDeviceToHost));
-//		CHECK(cudaMemcpy(h_input, d_input, inplen * sizeof(double), cudaMemcpyDeviceToHost));
+		CHECK(cudaMemcpy(teams, d_teams, numTeamBytes, cudaMemcpyDeviceToHost));
+		CHECK(cudaMemcpy(h_output, d_output, outlen * sizeof(double), cudaMemcpyDeviceToHost));
+		CHECK(cudaMemcpy(h_input, d_input, inplen * sizeof(double), cudaMemcpyDeviceToHost));
 
 		//assign team scores
 		//TODO: loop through all teams
-		bestFitness = (teams[0].team.fitness);
-		bestGene = teams[0].team.numInputs + teams[0].team.numOutputs;
-		bestTeam = teams[0].team.t1;
-		/*//commented out for single team testing
-		for(int n = 0; n < 1;n++){ //numTrials set to 1 for testing
+
+		//single team testing
+//		bestFitness = (teams[0].team.fitness);
+//		bestGene = teams[0].team.numInputs + teams[0].team.numOutputs;
+//		bestTeam = teams[0].team.t1;
+
+//		/*//commented out for single team testing
+		for(int n = 0; n < numTrials;n++){
 			catches = catches + (teams[n].team.catches);
 			if(bestFitness == 0 && !teamfound){
 				bestFitness = (teams[n].team.fitness);
@@ -487,14 +483,13 @@ int main(int argc, char **argv)
 				bestTeam = teams[n].team.t1;
 			}
 		}
-		*/
-//		printf("Generation %d, best fitness is %d, catches is %d\n", generations+1, bestFitness, catches);
+//		*/
+		printf("Generation %d, best fitness is %d, catches is %d\n", generations+1, bestFitness, catches);
 
 		//check for stagnation and burst mutate if stagnated
 		if(generations%burstGens == 0 && generations != 0){
 			//burst mutate
 			stagnated = true;
-
 			for(int pred = 0; pred < numPreds; pred++){
 				Population* predPop = predSubPops[pred];
 				for(int i = 0; i< hidden;i++){
@@ -519,10 +514,9 @@ int main(int argc, char **argv)
 		}
 		stagnated = false;
 		generations++;
-		CHECK(cudaFree(d_teams));
-		free(teams);
-//		CHECK(cudaFree(d_state));
-		CHECK(cudaFree(d_world));
+//		CHECK(cudaFree(d_teams));
+//		free(teams);
+//		CHECK(cudaFree(d_world));
 		CHECK(cudaFree(d_input));
 		CHECK(cudaFree(d_output));
 		free(h_input);
