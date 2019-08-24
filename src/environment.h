@@ -1,14 +1,16 @@
 #ifndef ENVIRONMENT_H_
 #define ENVIRONMENT_H_
-
+#ifndef nPreds
+#define nPreds 3
+#endif
 struct Gridworld{
 	int length;
 	int height;
 };
 
 struct State{
-	int PredatorX[3];
-	int PredatorY[3];
+	int PredatorX[nPreds];
+	int PredatorY[nPreds];
 	int PreyX;
 	int PreyY;
 	bool Caught;

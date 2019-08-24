@@ -5,7 +5,7 @@
 #define nPreds 3
 #endif
 #ifndef nHidden
-#define nHidden 15
+#define nHidden 10
 #endif
 #ifndef weightSize
 #define weightSize 7

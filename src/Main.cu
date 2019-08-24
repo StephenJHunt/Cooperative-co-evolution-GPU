@@ -26,7 +26,10 @@
 #define nPreds 3
 #endif
 #ifndef nHidden
-#define nHidden 15
+#define nHidden 10
+#endif
+#ifndef nIndivs
+#define nIndivs 100
 #endif
 //globals
 Neuron* bestTeam;
@@ -340,14 +343,23 @@ __global__ void testKernel(teamArr* teams, double* input, int inplen){
 
 int main(int argc, char **argv)
 {
+	//benchmark time vars
+	float timeTillCall, timeTillAfterCall, timeTillEnd;
+	cudaEvent_t start, stopBefore, stopAfter, stopEnd;
+	CHECK(cudaEventCreate(&start));
+	CHECK(cudaEventCreate(&stopBefore));
+	CHECK(cudaEventCreate(&stopAfter));
+	CHECK(cudaEventCreate(&stopEnd));
+	CHECK(cudaEventRecord(start, 0));
+
 	//testing values
 	int numInputs = 2;
-	int hidden = 15;
+	int hidden = nHidden;
 	int numOutputs = 5;
-	int numIndivs = 100;//540
+	int numIndivs = nIndivs;//540
 	int maxGens = 100;
 	int goalFitness = 100;
-	int numPreds = 3;//6
+	int numPreds = nPreds;//6
 	int burstGens = 2;
 
 
@@ -428,12 +440,12 @@ int main(int argc, char **argv)
 		int outlen = (teams[0].team.numOutputs);
 		double* d_input;
 		double* h_input;
-		printf("input array bytes: %d\n", inplen * sizeof(double));
+//		printf("input array bytes: %d\n", inplen * sizeof(double));
 		CHECK(cudaMalloc(&d_input, inplen * sizeof(double)));
 		h_input = (double*)malloc(inplen * sizeof(double));
 		double* d_output;
 		double* h_output;
-		printf("output array bytes: %d\n", outlen * sizeof(double));
+//		printf("output array bytes: %d\n", outlen * sizeof(double));
 		CHECK(cudaMalloc(&d_output, outlen * sizeof(double)));
 		h_output = (double*)malloc(outlen * sizeof(double));
 
@@ -441,10 +453,24 @@ int main(int argc, char **argv)
 //		testKernel<<<1, 100>>>(d_teams, d_input, inplen);
 		// blocks, threadsPerBlock
 //		teams = h_eval(h_pp->world, teams, numPreds, h_input, h_output, inplen, outlen, trialsPerEval, sim, numTrials);
+
+		//benchmark time 1
+		CHECK(cudaEventRecord(stopBefore, 0));
+		CHECK(cudaEventSynchronize(stopBefore));
+		CHECK(cudaEventElapsedTime(&timeTillCall, start, stopBefore));
+		printf("Execution time till before evaluation call: %3.1f ms \n", timeTillCall);
+
 		runEvaluationsParallel<<<blocks, threadsPerBlock>>>(d_state, d_world, d_teams, numPreds, d_input, d_output, inplen, outlen, trialsPerEval, sim, numTrials);
 //		feedForward* t = evaluate(*pp, team, numPreds);
 		CHECK(cudaPeekAtLastError());
 		cudaDeviceSynchronize();
+
+		//benchmark time 2
+		CHECK(cudaEventRecord(stopAfter, 0));
+		CHECK(cudaEventSynchronize(stopAfter));
+		CHECK(cudaEventElapsedTime(&timeTillAfterCall, start, stopAfter));
+		printf("Execution time till after evaluation call: %3.1f ms \n", timeTillAfterCall-timeTillCall);
+
 		//send memory back
 		CHECK(cudaMemcpy(teams, d_teams, numTeamBytes, cudaMemcpyDeviceToHost));
 		CHECK(cudaMemcpy(h_output, d_output, outlen * sizeof(double), cudaMemcpyDeviceToHost));
@@ -523,5 +549,10 @@ int main(int argc, char **argv)
 		free(h_output);
 
 	}
+	//benchmark time 3
+	CHECK(cudaEventRecord(stopEnd, 0));
+	CHECK(cudaEventSynchronize(stopEnd));
+	CHECK(cudaEventElapsedTime(&timeTillEnd, start, stopEnd));
+	printf("Total execution time: %3.1f ms \n", timeTillEnd);
 }
 

@@ -11,7 +11,7 @@
 #define nPreds 3
 #endif
 #ifndef nHidden
-#define nHidden 15
+#define nHidden 10
 #endif
 // includes, system
 #include <stdlib.h>

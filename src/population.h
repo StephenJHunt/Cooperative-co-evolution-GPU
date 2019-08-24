@@ -4,7 +4,7 @@
 #define nPreds 3
 #endif
 #ifndef nHidden
-#define nHidden 15
+#define nHidden 10
 #endif
 #ifndef nIndivs
 #define nIndivs 100
