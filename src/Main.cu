@@ -223,19 +223,21 @@ teamArr* h_eval(Gridworld* h_worldpntr, teamArr* h_teams, int h_numPreds, double
 	return h_teams;
 }
 
-__global__ void runEvaluationsParallel(State* statepntr, Gridworld* worldpntr, teamArr* d_teams, int numPreds, double* input, double* output, int inplen, int outlen, int trialsPerEval, bool sim, int numTrials){
+__global__ void runEvaluationsParallel(State* statepntr, Gridworld* worldpntr, teamArr* d_teams, int numPreds, double* input, double* output, int inplen, int outlen, int trialsPerEval, bool sim, int numTrials, bool isCaught){
 	int index = threadIdx.x + blockIdx.x * blockDim.x;
 	int stride = blockDim.x * gridDim.x;
-//	State* statepntr = new State();
+	isCaught = false;
 	kernelReset(statepntr, numPreds);
-//
+
 	for(int i = index;i < numTrials;i+= stride){
 		int catches = 0;
 		int total_fitness = 0;
-//
+
 		int PreyPositions[2][9] = {{16, 50, 82, 82, 82, 16, 50, 50, 82},{50, 50, 50, 82, 16, 50, 16, 82, 50}};
-//
+
 		for(int l = 0;l < trialsPerEval;l++){
+			if(l % (trialsPerEval/10) == 0 && isCaught)break;
+
 			int fitness =0;
 			int steps = 0;
 			int maxSteps = 150;
@@ -287,6 +289,8 @@ __global__ void runEvaluationsParallel(State* statepntr, Gridworld* worldpntr, t
 			}else{
 				fitness = (200 - avg_final_dist)/10;
 				catches++;
+				isCaught = true;
+				break;
 			}
 			total_fitness = total_fitness + fitness;
 		}
@@ -406,6 +410,10 @@ int main(int argc, char **argv)
 	State* d_state;
 	CHECK(cudaMalloc(&d_state, sizeof(State)));
 
+	//bool for stopping unnecessary execution in kernel
+	bool* d_isCaught;
+	CHECK(cudaMalloc(&d_isCaught, sizeof(bool)));
+
 	//run simulation
 	while(generations < maxGens && catches < numTrials){//run contents of this loop in parallel
 		catches = 0;
@@ -460,7 +468,7 @@ int main(int argc, char **argv)
 		CHECK(cudaEventElapsedTime(&timeTillCall, start, stopBefore));
 		printf("Execution time till before evaluation call: %3.1f ms \n", timeTillCall);
 
-		runEvaluationsParallel<<<blocks, threadsPerBlock>>>(d_state, d_world, d_teams, numPreds, d_input, d_output, inplen, outlen, trialsPerEval, sim, numTrials);
+		runEvaluationsParallel<<<blocks, threadsPerBlock>>>(d_state, d_world, d_teams, numPreds, d_input, d_output, inplen, outlen, trialsPerEval, sim, numTrials, d_isCaught);
 //		feedForward* t = evaluate(*pp, team, numPreds);
 		CHECK(cudaPeekAtLastError());
 		cudaDeviceSynchronize();
