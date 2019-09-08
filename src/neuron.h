@@ -2,10 +2,10 @@
 #define NEURON_H_
 #endif
 #ifndef nPreds
-#define nPreds 3
+#define nPreds 6
 #endif
 #ifndef nHidden
-#define nHidden 10
+#define nHidden 15
 #endif
 #ifndef weightSize
 #define weightSize 7

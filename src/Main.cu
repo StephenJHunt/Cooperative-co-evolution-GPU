@@ -23,13 +23,13 @@
 #include "population.h"
 
 #ifndef nPreds
-#define nPreds 3
+#define nPreds 6
 #endif
 #ifndef nHidden
-#define nHidden 10
+#define nHidden 15
 #endif
 #ifndef nIndivs
-#define nIndivs 100
+#define nIndivs 540
 #endif
 //globals
 Neuron* bestTeam;
@@ -415,7 +415,7 @@ int main(int argc, char **argv)
 	CHECK(cudaMalloc(&d_isCaught, sizeof(bool)));
 
 	//run simulation
-	while(generations < maxGens && catches < numTrials){//run contents of this loop in parallel
+	while(generations < maxGens && catches < 1){//run contents of this loop in parallel
 		catches = 0;
 
 		for(int t = 0; t < numTrials;t++){

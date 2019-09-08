@@ -8,10 +8,10 @@
 #ifndef FEEDFORWARD_H_
 #define FEEDFORWARD_H_
 #ifndef nPreds
-#define nPreds 3
+#define nPreds 6
 #endif
 #ifndef nHidden
-#define nHidden 10
+#define nHidden 15
 #endif
 // includes, system
 #include <stdlib.h>

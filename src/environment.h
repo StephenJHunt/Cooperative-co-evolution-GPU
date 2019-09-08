@@ -1,7 +1,7 @@
 #ifndef ENVIRONMENT_H_
 #define ENVIRONMENT_H_
 #ifndef nPreds
-#define nPreds 3
+#define nPreds 6
 #endif
 struct Gridworld{
 	int length;
