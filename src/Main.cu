@@ -51,8 +51,8 @@ int catches;
 
 //input params with default values
 bool sim = false;
-int hidden = 10;
-int numIndivs = 100;
+int hidden = 15;
+int numIndivs = 540;
 int numInputs = 2;
 int numOutputs = 5;
 int burstGens = 10;
@@ -155,10 +155,10 @@ feedForward* evaluate(PredatorPrey e, feedForward* team, int numTeams){
 //			delete[] output;
 ///*
 			//output state
-			for(int pred = 0;pred < numPreds;pred++){
-				printf("Predator %d, %d\n", state.PredatorX[pred], state.PredatorY[pred]);
-			}
-			printf("prey %d, %d \n", state.PreyX, state.PreyY);
+//			for(int pred = 0;pred < numPreds;pred++){
+//				printf("Predator %d, %d\n", state.PredatorX[pred], state.PredatorY[pred]);
+//			}
+//			printf("prey %d, %d \n", state.PreyX, state.PreyY);
 //*/
 
 		}
@@ -206,15 +206,26 @@ feedForward* evaluate(PredatorPrey e, feedForward* team, int numTeams){
 
 }
 
-
+void CHECK(cudaError_t err){
+	if(err){
+		printf("Error in %s at line %d: %s\n", __FILE__, __LINE__, cudaGetErrorString(err));
+	}
+}
 int main(int argc, char **argv)
 {
 //	runTests();
 //	printf("\n\nExecution\n\n");
-
+	//benchmark time vars
+	float timeTillCall, timeTillAfterCall, timeTillEnd;
+	cudaEvent_t start, stopBefore, stopAfter, stopEnd;
+	CHECK(cudaEventCreate(&start));
+	CHECK(cudaEventCreate(&stopBefore));
+	CHECK(cudaEventCreate(&stopAfter));
+	CHECK(cudaEventCreate(&stopEnd));
+	CHECK(cudaEventRecord(start, 0));
 
 	numInputs = 2;
-	hidden = 150;
+	hidden = 15;
 	numOutputs = 5;
 	numIndivs = 540;//540
 	maxGens = 100;
@@ -255,75 +266,85 @@ int main(int argc, char **argv)
 	while(generations < maxGens && catches < numTrials){
 		catches = 0;
 
-		for(int x = 0; x < numTrials;x++){
+		CHECK(cudaEventRecord(stopBefore, 0));
+		CHECK(cudaEventSynchronize(stopBefore));
+		CHECK(cudaEventElapsedTime(&timeTillCall, start, stopBefore));
+		printf("Execution time till before evaluation call: %3.1f ms \n", timeTillCall);
+//		for(int m = 0; m < numTrials;m++){
+			for(int x = 0; x < numTrials;x++){
 
-			for(int f = 0;f<numPreds;f++){
-				feedForward* ff = newFeedForward(numInputs, hidden, numOutputs, false);
-				Create(*ff, predSubPops[f], hidden);
-				team[f] = *ff;
-			}
-			PredatorPrey* pp = newPredatorPrey(numPreds);
-			reset(*pp, numPreds);
+				for(int f = 0;f<numPreds;f++){
+					feedForward* ff = newFeedForward(numInputs, hidden, numOutputs, false);
+					Create(*ff, predSubPops[f], hidden);
+					team[f] = *ff;
+				}
+				PredatorPrey* pp = newPredatorPrey(numPreds);
+				reset(*pp, numPreds);
 
-			feedForward* t = evaluate(*pp, team, numPreds);
-			catches = catches + getCatches(t[0]);
-			if(bestFitness == 0 && !teamfound){
-				bestFitness = getFitness(t[0]);
-			}
-			printf("best fitness %d\n", bestFitness);
-//			printf("this team fitness: %d\n", getFitness(t[0]));
-			if(getFitness(t[0]) > bestFitness){
-				bestFitness = getFitness(t[0]);
-				double* bestActivation = new double[t->numHidden];
-				Neuron** bestNeurons = new Neuron*[t->numHidden];
-				for(int i = 0;i<t->numHidden;i++){
-					bestActivation[i] = t->Activation[i];
-					bestNeurons[i] = t->HiddenUnits[i];
+				feedForward* t = evaluate(*pp, team, numPreds);
+				catches = catches + getCatches(t[0]);
+				if(bestFitness == 0 && !teamfound){
+					bestFitness = getFitness(t[0]);
 				}
-				bestTeam = new feedForward;
-				bestTeam->ID = t->ID;
-				bestTeam->Catches = t->Catches;
-				bestTeam->Fitness = t->Fitness;
-				bestTeam->GeneSize = t->GeneSize;
-				bestTeam->NumInputs = t->NumInputs;
-				bestTeam->NumOutputs = t->NumOutputs;
-				bestTeam->Parent1 = t->Parent1;
-				bestTeam->Parent2 = t->Parent2;
-				bestTeam->Trials = t->Trials;
-				bestTeam->bias = t->bias;
-				bestTeam->name = t->name;
-				bestTeam->numHidden = t->numHidden;
-				bestTeam->Activation=bestActivation;
-				bestTeam->HiddenUnits = bestNeurons;
-				for(int i = 0;i<numPreds;i++){
-					Tag(bestTeam[i]);
+	//			printf("best fitness %d\n", bestFitness);
+	//			printf("this team fitness: %d\n", getFitness(t[0]));
+				if(getFitness(t[0]) > bestFitness){
+					bestFitness = getFitness(t[0]);
+					double* bestActivation = new double[t->numHidden];
+					Neuron** bestNeurons = new Neuron*[t->numHidden];
+					for(int i = 0;i<t->numHidden;i++){
+						bestActivation[i] = t->Activation[i];
+						bestNeurons[i] = t->HiddenUnits[i];
+					}
+					bestTeam = new feedForward;
+					bestTeam->ID = t->ID;
+					bestTeam->Catches = t->Catches;
+					bestTeam->Fitness = t->Fitness;
+					bestTeam->GeneSize = t->GeneSize;
+					bestTeam->NumInputs = t->NumInputs;
+					bestTeam->NumOutputs = t->NumOutputs;
+					bestTeam->Parent1 = t->Parent1;
+					bestTeam->Parent2 = t->Parent2;
+					bestTeam->Trials = t->Trials;
+					bestTeam->bias = t->bias;
+					bestTeam->name = t->name;
+					bestTeam->numHidden = t->numHidden;
+					bestTeam->Activation=bestActivation;
+					bestTeam->HiddenUnits = bestNeurons;
+					for(int i = 0;i<numPreds;i++){
+						Tag(bestTeam[0]);
+					}
+				}
+				if(!teamfound){
+					teamfound = true;
+					double* bestActivation = new double[t->numHidden];
+					Neuron** bestNeurons = new Neuron*[t->numHidden];
+					for(int i = 0;i<t->numHidden;i++){
+						bestActivation[i] = t->Activation[i];
+						bestNeurons[i] = t->HiddenUnits[i];
+					}
+					bestTeam = new feedForward;
+					bestTeam->ID = t->ID;
+					bestTeam->Catches = t->Catches;
+					bestTeam->Fitness = t->Fitness;
+					bestTeam->GeneSize = t->GeneSize;
+					bestTeam->NumInputs = t->NumInputs;
+					bestTeam->NumOutputs = t->NumOutputs;
+					bestTeam->Parent1 = t->Parent1;
+					bestTeam->Parent2 = t->Parent2;
+					bestTeam->Trials = t->Trials;
+					bestTeam->bias = t->bias;
+					bestTeam->name = t->name;
+					bestTeam->numHidden = t->numHidden;
+					bestTeam->Activation=bestActivation;
+					bestTeam->HiddenUnits = bestNeurons;
 				}
 			}
-			if(!teamfound){
-				teamfound = true;
-				double* bestActivation = new double[t->numHidden];
-				Neuron** bestNeurons = new Neuron*[t->numHidden];
-				for(int i = 0;i<t->numHidden;i++){
-					bestActivation[i] = t->Activation[i];
-					bestNeurons[i] = t->HiddenUnits[i];
-				}
-				bestTeam = new feedForward;
-				bestTeam->ID = t->ID;
-				bestTeam->Catches = t->Catches;
-				bestTeam->Fitness = t->Fitness;
-				bestTeam->GeneSize = t->GeneSize;
-				bestTeam->NumInputs = t->NumInputs;
-				bestTeam->NumOutputs = t->NumOutputs;
-				bestTeam->Parent1 = t->Parent1;
-				bestTeam->Parent2 = t->Parent2;
-				bestTeam->Trials = t->Trials;
-				bestTeam->bias = t->bias;
-				bestTeam->name = t->name;
-				bestTeam->numHidden = t->numHidden;
-				bestTeam->Activation=bestActivation;
-				bestTeam->HiddenUnits = bestNeurons;
-			}
-		}
+//		}
+		CHECK(cudaEventRecord(stopAfter, 0));
+		CHECK(cudaEventSynchronize(stopAfter));
+		CHECK(cudaEventElapsedTime(&timeTillAfterCall, start, stopAfter));
+		printf("Execution time till after evaluation call: %3.1f ms \n", timeTillAfterCall-timeTillCall);
 
 		printf("Generation %d, best fitness is %d, catches is %d\n", generations, bestFitness, catches);
 
@@ -360,12 +381,10 @@ int main(int argc, char **argv)
 		//reset teams?? doens't seem to do anything
 		generations++;
 	}
-//	char* test = "hello";//this is a string now
-	//printf(test);
-	//printf("\n");
-    //printf("Hello World!\n");
-    //CUDAHello<<<1,10>>>();
-//    cudaDeviceReset();
-    //
+	//benchmark time 3
+	CHECK(cudaEventRecord(stopEnd, 0));
+	CHECK(cudaEventSynchronize(stopEnd));
+	CHECK(cudaEventElapsedTime(&timeTillEnd, start, stopEnd));
+	printf("Total execution time: %3.1f ms \n", timeTillEnd);
 }
 
