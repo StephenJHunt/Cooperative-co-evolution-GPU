@@ -26,7 +26,7 @@
 #define nPreds 6
 #endif
 #ifndef nHidden
-#define nHidden 15
+#define nHidden 50
 #endif
 #ifndef nIndivs
 #define nIndivs 540
@@ -236,7 +236,7 @@ __global__ void runEvaluationsParallel(State* statepntr, Gridworld* worldpntr, t
 		int PreyPositions[2][9] = {{16, 50, 82, 82, 82, 16, 50, 50, 82},{50, 50, 50, 82, 16, 50, 16, 82, 50}};
 
 		for(int l = 0;l < trialsPerEval;l++){
-			if(l % (trialsPerEval/10) == 0 && isCaught)break;
+			if(l % (numTrials/10) == 0 && isCaught)break;
 
 			int fitness =0;
 			int steps = 0;
@@ -279,6 +279,8 @@ __global__ void runEvaluationsParallel(State* statepntr, Gridworld* worldpntr, t
 				steps++;
 			}
 
+
+
 			for(int p = 0; p < numPreds;p++){
 				avg_final_dist = avg_final_dist + calculateDistance(worldpntr, statepntr->PredatorX[p], statepntr->PredatorY[p], statepntr->PreyX, statepntr->PreyY);
 			}
@@ -287,6 +289,10 @@ __global__ void runEvaluationsParallel(State* statepntr, Gridworld* worldpntr, t
 			if(!Caught(statepntr)){
 				fitness = (avg_init_dist - avg_final_dist);// /10
 			}else{
+//				printf("Pred1 at %d, %d\n", statepntr->PredatorX[0], statepntr->PredatorY[0]);
+//				printf("Pred2 at %d, %d\n", statepntr->PredatorX[1], statepntr->PredatorY[1]);
+//				printf("Pred3 at %d, %d\n", statepntr->PredatorX[2], statepntr->PredatorY[2]);
+//				printf("Prey at %d, %d\n", statepntr->PreyX, statepntr->PreyY);
 				fitness = (200 - avg_final_dist)/10;
 				catches++;
 				isCaught = true;
