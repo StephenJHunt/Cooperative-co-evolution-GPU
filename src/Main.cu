@@ -1,20 +1,3 @@
-////////////////////////////////////////////////////////////////////////////
-//
-// Copyright 1993-2015 NVIDIA Corporation.  All rights reserved.
-//
-// Please refer to the NVIDIA end user license agreement (EULA) associated
-// with this source code for terms and conditions that govern your use of
-// this software. Any use, reproduction, disclosure, or distribution of
-// this software and related documentation outside the terms of the EULA
-// is strictly prohibited.
-//
-////////////////////////////////////////////////////////////////////////////
-
-/* Template project which demonstrates the basics on how to setup a project
-* example application.
-* Host code.
-*/
-
 // includes, system
 #include <stdlib.h>
 #include <stdio.h>
@@ -37,10 +20,6 @@
 //#include "network.h"
 #include "feedforward.h"
 #include "population.h"
-
-////////////////////////////////////////////////////////////////////////////////
-// Program main
-////////////////////////////////////////////////////////////////////////////////
 
 //globals
 feedForward* bestTeam;
@@ -225,12 +204,12 @@ int main(int argc, char **argv)
 	CHECK(cudaEventRecord(start, 0));
 
 	numInputs = 2;
-	hidden = 15;
+	hidden = 50;
 	numOutputs = 5;
 	numIndivs = 540;//540
 	maxGens = 100;
 	goalFitness = 100;
-	numPreds = 3;//6
+	numPreds = 6;//6
 	burstGens = 2;
 
 
@@ -275,7 +254,7 @@ int main(int argc, char **argv)
 
 				for(int f = 0;f<numPreds;f++){
 					feedForward* ff = newFeedForward(numInputs, hidden, numOutputs, false);
-					Create(*ff, predSubPops[f], hidden);
+					Create(ff, predSubPops[f], hidden);
 					team[f] = *ff;
 				}
 				PredatorPrey* pp = newPredatorPrey(numPreds);
